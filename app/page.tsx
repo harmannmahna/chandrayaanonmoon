@@ -1,15 +1,16 @@
 "use client";
 
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { JudgeWalkthrough, JUDGE_STEPS } from "@/app/components/JudgeWalkthrough";
 import { SensorCard } from "@/app/components/SensorCard";
+import { DropZoneImageSlot } from "@/app/components/DropZoneImageSlot";
+import { GlobalDropZoneBanner } from "@/app/components/GlobalDropZoneBanner";
 import { CoveragePanel, MatchCanvas, QualityBadge } from "@/app/components/PipelineWidgets";
-import { loadDemoSet, loadUserImage } from "@/app/lib/io/loadImages";
-import { assessImageSize, maybeDownsampleForPreview } from "@/app/lib/io/imageSizeGuards";
+import { loadDemoSet } from "@/app/lib/io/loadImages";
+import { prepareUploadFile, type ImageMeta } from "@/app/lib/io/prepareUpload";
 import { preprocessAll, runAllPairs, runPairPipeline } from "@/app/lib/pipeline/runPipeline";
 import { exportAllMetrics, exportPairResults } from "@/app/lib/exports/exportResults";
-import { imageDataToDataUrl } from "@/app/lib/preprocessing/clahe";
 import type {
   DemoSetDescriptor,
   ImageKey,
@@ -52,8 +53,11 @@ function HomePageInner() {
     loftr?: PairPipelineResult;
   }>({});
   const [sizeWarnings, setSizeWarnings] = useState<string[]>([]);
+  const [toast, setToast] = useState<string | null>(null);
   const [status, setStatus] = useState("Ready for demo or upload.");
   const [stage, setStage] = useState<"input" | "preprocess" | "match" | "results">("input");
+  const rawImagesRef = useRef(rawImages);
+  rawImagesRef.current = rawImages;
 
   const currentTarget = walkthroughOpen ? JUDGE_STEPS[stepIndex]?.target : undefined;
   const ready = Boolean(rawImages.A && rawImages.B && rawImages.C);
@@ -107,41 +111,80 @@ function HomePageInner() {
     }
   };
 
-  const onUpload = async (key: ImageKey, file: File | null) => {
-    if (!file) {
-      setRawImages((current) => {
-        const next = { ...current };
-        delete next[key];
-        return next;
-      });
-      return;
-    }
-    setStatus(`Normalizing ${file.name}…`);
-    try {
-      let loaded = await loadUserImage(key, file);
-      const warning = assessImageSize(loaded.imageData.width, loaded.imageData.height);
-      const notes: string[] = [];
-      if (warning.message) notes.push(`${key}: ${warning.message}`);
-      if (warning.suggestDownsample) {
-        const preview = maybeDownsampleForPreview(loaded.imageData);
-        if (preview.downsampled) {
-          loaded = {
-            ...loaded,
-            imageData: preview.imageData,
-            previewUrl: imageDataToDataUrl(preview.imageData),
-          };
-          notes.push(`${key}: preview downsampled for interactive use.`);
-        }
-      }
-      setSizeWarnings((current) => [...current.filter((item) => !item.startsWith(`${key}:`)), ...notes]);
-      setRawImages((current) => ({ ...current, [key]: loaded }));
-      setDescriptor(null);
-      resetPipeline();
-      setStatus(`Loaded ${file.name} as image ${key}`);
-    } catch (error) {
-      setStatus(error instanceof Error ? error.message : "Upload failed");
-    }
+  const showToast = useCallback((message: string) => {
+    setToast(message);
+    window.setTimeout(() => {
+      setToast((current) => (current === message ? null : current));
+    }, 4000);
+  }, []);
+
+  const applyPreparedImage = useCallback((key: ImageKey, imageData: ImageData, meta: ImageMeta) => {
+    const loaded: LoadedImage = {
+      key,
+      fileName: meta.fileName,
+      imageData,
+      previewUrl: meta.previewUrl,
+      convertedFrom: meta.convertedFrom,
+      originalWidth: meta.originalWidth,
+      originalHeight: meta.originalHeight,
+    };
+    setRawImages((current) => ({ ...current, [key]: loaded }));
+    setSizeWarnings((current) => {
+      const withoutSlot = current.filter((item) => !item.startsWith(`${key}:`));
+      return meta.warning ? [...withoutSlot, `${key}: ${meta.warning}`] : withoutSlot;
+    });
+    setDescriptor(null);
+    resetPipeline();
+    setStatus(`Loaded ${meta.convertedFrom || meta.fileName} as image ${key}`);
+  }, []);
+
+  const clearSlot = (key: ImageKey) => {
+    setRawImages((current) => {
+      const next = { ...current };
+      delete next[key];
+      return next;
+    });
+    setSizeWarnings((current) => current.filter((item) => !item.startsWith(`${key}:`)));
+    resetPipeline();
+    setStatus(`Cleared image ${key}`);
   };
+
+  const assignDroppedFiles = useCallback(
+    async (files: File[]) => {
+      if (!files.length || loadingDemo || working) return;
+      const extras = files.length > 3;
+      if (extras) showToast("Only first 3 images used.");
+
+      if (files.length === 1) {
+        const empty = (["A", "B", "C"] as ImageKey[]).find((key) => !rawImagesRef.current[key]);
+        if (!empty) {
+          showToast("All slots are filled. Drop onto a specific slot to replace it.");
+          return;
+        }
+        setStatus(`Normalizing ${files[0].name}…`);
+        try {
+          const prepared = await prepareUploadFile(files[0]);
+          applyPreparedImage(empty, prepared.imageData, prepared.meta);
+        } catch (error) {
+          setStatus(error instanceof Error ? error.message : "Upload failed");
+        }
+        return;
+      }
+
+      const used = files.slice(0, 3);
+      const keys: ImageKey[] = ["A", "B", "C"];
+      setStatus(`Normalizing ${used.length} dropped images…`);
+      try {
+        for (let i = 0; i < used.length; i++) {
+          const prepared = await prepareUploadFile(used[i]);
+          applyPreparedImage(keys[i], prepared.imageData, prepared.meta);
+        }
+      } catch (error) {
+        setStatus(error instanceof Error ? error.message : "Upload failed");
+      }
+    },
+    [applyPreparedImage, loadingDemo, showToast, working],
+  );
 
   const runPreprocess = async () => {
     if (!ready) return;
@@ -264,6 +307,17 @@ function HomePageInner() {
         <p className="mt-3 text-sm text-[#8a8a86]">{status}</p>
       </section>
 
+      <GlobalDropZoneBanner disabled={loadingDemo || working} onFilesDropped={assignDroppedFiles} />
+
+      {toast ? (
+        <div
+          role="status"
+          className="border border-[#5a5418] bg-[rgba(40,36,8,0.9)] px-4 py-3 text-sm text-[#d8c23e]"
+        >
+          {toast}
+        </div>
+      ) : null}
+
       {sizeWarnings.length > 0 ? (
         <section className="border border-[#642828] bg-[rgba(43,5,5,0.85)] p-4 text-sm text-[#ff8c8c]">
           {sizeWarnings.map((warning) => (
@@ -279,26 +333,18 @@ function HomePageInner() {
 
       <section className="grid gap-4 md:grid-cols-3">
         {SLOTS.map((slot) => {
-          const image = rawImages[slot.key];
+          const image = rawImages[slot.key] ?? null;
           return (
-            <label key={slot.key} className="cursor-pointer border border-[#292927] bg-[#101010] p-4">
-              <div className="mono text-[10px] uppercase tracking-[0.14em] text-[#666]">{slot.title}</div>
-              <div className="mt-2 text-sm text-[#9a9a96]">{slot.hint}</div>
-              <div className="mt-4 flex h-40 items-center justify-center overflow-hidden border border-[#292927] bg-[#050505]">
-                {image ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={image.previewUrl} alt={slot.title} className="h-full w-full object-cover grayscale" />
-                ) : (
-                  <span className="text-xs text-[#666]">Drop / select image or XML</span>
-                )}
-              </div>
-              <input
-                className="mt-3 block w-full text-xs text-[#888]"
-                type="file"
-                accept="image/*,.xml,.svg"
-                onChange={(event) => onUpload(slot.key, event.target.files?.[0] || null)}
-              />
-            </label>
+            <DropZoneImageSlot
+              key={slot.key}
+              label={slot.title}
+              hint={slot.hint}
+              image={image}
+              sensorInfo={image?.sensorInfo}
+              disabled={loadingDemo || working}
+              onImageLoaded={(_file, imageData, meta) => applyPreparedImage(slot.key, imageData, meta)}
+              onClear={() => clearSlot(slot.key)}
+            />
           );
         })}
       </section>
