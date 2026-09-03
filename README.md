@@ -1,16 +1,23 @@
 # LUNA/REGISTER
 
-A black-and-white, browser-based prototype for registering Chandrayaan-2 imagery against an LRO reference image.
+A black-and-white, browser-based prototype for comparing three lunar images across every pair.
 
 ## Pipeline
 
-1. Upload a source and reference image.
-2. Enhance local contrast with CLAHE.
-3. Generate cross-image terrain correspondences.
-4. Reject inconsistent matches with RANSAC and estimate a homography.
-5. Warp the source into the reference frame and inspect the result.
+1. Upload three image products as images or embedded-image XML.
+2. Normalize every decodable input to PNG.
+3. Enhance local contrast with CLAHE.
+4. Generate correspondences for A↔B, A↔C, and B↔C.
+5. Estimate three homographies with RANSAC.
+6. Warp and inspect each pair independently.
 
-The final screen provides the registered image, 50/50 overlay, visual match map, reprojection RMSE, inlier ratio, spatial coverage, homography matrix, and downloadable CSV/JSON match data.
+The final screen provides registered images, 50/50 overlays, visual match maps, reprojection RMSE, inlier ratios, spatial coverage, three homography matrices, and combined CSV/JSON match data.
+
+## XML and PNG conversion
+
+The local converter accepts browser-decodable images, SVG documents, XML containing an image data URI, and XML elements explicitly marked as base64 with embedded raster pixels. Inputs are normalized to PNG before preprocessing.
+
+PDS XML labels normally contain metadata and a filename pointing to a separate `.img`, `.tif`, or other raster product. A metadata label has no pixels to convert by itself. For those products, upload the referenced browser-decodable raster rather than the XML label.
 
 ## Run locally
 
