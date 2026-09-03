@@ -2,18 +2,17 @@
 
 import type { Match, PairPipelineResult } from "@/app/lib/types";
 import type { RegistrationQuality } from "@/app/lib/metrics/qualityRules";
-import { qualityTone } from "@/app/lib/metrics/qualityRules";
+
+const QUALITY_CLASS: Record<RegistrationQuality, string> = {
+  High: "badge-quality-high",
+  Medium: "badge-quality-medium",
+  Low: "badge-quality-low",
+  Unreliable: "badge-quality-unreliable",
+};
 
 export function QualityBadge({ quality }: { quality: RegistrationQuality }) {
-  const tone = qualityTone(quality);
-  const cls =
-    tone === "good"
-      ? "border-[#71821f] text-[#d8ff3e] bg-[rgba(216,255,62,0.08)]"
-      : tone === "bad"
-        ? "border-[#642828] text-[#ff8c8c] bg-[rgba(255,140,140,0.08)]"
-        : "border-[#6a5a12] text-[#d8c23e] bg-[rgba(216,194,62,0.08)]";
   return (
-    <span className={`inline-flex border px-2 py-1 text-[10px] uppercase tracking-[0.12em] mono ${cls}`}>
+    <span className={`badge-quality mono ${QUALITY_CLASS[quality]}`}>
       {quality}
     </span>
   );
@@ -47,7 +46,7 @@ export function MatchCanvas({
   const inlierKeys = new Set((inliers || []).map((m) => `${m.x1}:${m.y1}:${m.x2}:${m.y2}`));
   const draw = refined?.length ? refined : matches || [];
   return (
-    <div className="relative grid h-[360px] grid-cols-2 gap-8 overflow-hidden border border-[#292927] bg-[#050505]">
+    <div className="canvas-frame relative grid h-[360px] grid-cols-2 gap-8 overflow-hidden">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={leftUrl} alt={leftLabel} className="h-full w-full object-cover opacity-80 grayscale" />
       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -65,7 +64,7 @@ export function MatchCanvas({
           const y1 = (ry1 / lh) * 420;
           const x2 = 520 + (rx2 / rw) * 480;
           const y2 = (ry2 / rh) * 420;
-          const stroke = refinedPoint ? "rgba(120,200,255,0.8)" : isInlier ? "rgba(216,255,62,0.55)" : "rgba(255,84,84,0.35)";
+          const stroke = refinedPoint ? "rgba(126,231,255,0.85)" : isInlier ? "rgba(74,222,128,0.6)" : "rgba(251,113,133,0.4)";
           return (
             <g key={index}>
               <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={stroke} strokeWidth="0.8" />
@@ -75,10 +74,10 @@ export function MatchCanvas({
           );
         })}
       </svg>
-      <span className="absolute left-3 top-3 border border-[#444] bg-black/80 px-2 py-1 text-[9px] uppercase tracking-[0.1em] text-[#aaa] mono">
+      <span className="absolute left-3 top-3 border border-[var(--border)] bg-black/70 px-2 py-1 text-[9px] uppercase tracking-[0.1em] text-[var(--text-muted)] mono">
         {leftLabel}
       </span>
-      <span className="absolute right-3 top-3 border border-[#444] bg-black/80 px-2 py-1 text-[9px] uppercase tracking-[0.1em] text-[#aaa] mono">
+      <span className="absolute right-3 top-3 border border-[var(--border)] bg-black/70 px-2 py-1 text-[9px] uppercase tracking-[0.1em] text-[var(--text-muted)] mono">
         {rightLabel}
       </span>
     </div>
@@ -88,25 +87,25 @@ export function MatchCanvas({
 export function CoveragePanel({ pair }: { pair: PairPipelineResult }) {
   const g = pair.metrics.gridCoverage;
   return (
-    <div className="border border-[#292927] bg-[#101010]">
-      <div className="flex items-center justify-between border-b border-[#292927] px-4 py-3">
-        <div className="mono text-[10px] uppercase tracking-[0.12em] text-[#888]">Coverage</div>
-        <span className={`mono text-[10px] uppercase tracking-[0.12em] ${g.uniformRegistration ? "text-[#d8ff3e]" : "text-[#d8c23e]"}`}>
+    <div className="panel">
+      <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3">
+        <div className="kicker">Coverage</div>
+        <span className={`mono text-[10px] uppercase tracking-[0.12em] ${g.uniformRegistration ? "text-[var(--quality-high)]" : "text-[var(--quality-medium)]"}`}>
           Uniform: {g.uniformRegistration ? "Yes" : "No"}
         </span>
       </div>
       <div className="grid gap-4 p-4 md:grid-cols-2">
-        <div className="overflow-hidden border border-[#292927] bg-[#050505]">
+        <div className="canvas-frame overflow-hidden">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={pair.coverageHeatmapUrl} alt="Coverage heatmap" className="h-56 w-full object-contain" />
         </div>
-        <div className="space-y-2 text-sm text-[#9a9a96]">
+        <div className="muted space-y-2 text-sm">
           <div>Filled cells: {g.filledCells}/{g.rows * g.cols}</div>
           <div>Min / max / mean: {g.minCellCount} / {g.maxCellCount} / {g.meanCellCount.toFixed(1)}</div>
           <div>Uniformity score: {g.uniformityScore.toFixed(3)}</div>
           <div className="grid grid-cols-3 gap-1 pt-2">
             {g.flatCounts.map((count, i) => (
-              <div key={i} className="border border-[#292927] bg-[#0d0d0d] px-2 py-3 text-center mono text-xs text-white">
+              <div key={i} className="panel-muted px-2 py-3 text-center mono text-xs text-[var(--text-primary)]">
                 {count}
               </div>
             ))}

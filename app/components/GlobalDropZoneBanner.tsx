@@ -83,13 +83,13 @@ export function GlobalDropZoneBanner({ disabled = false, onFilesDropped }: Props
         const files = filesFromDataTransfer(event.dataTransfer);
         if (files.length) onFilesDropped(files);
       }}
-      className={`border px-4 py-3 text-sm transition-colors ${
+      className={`panel px-4 py-3 text-sm transition-colors ${
         active
-          ? "border-[#d8ff3e] bg-[rgba(216,255,62,0.08)] text-[#e7e7e3]"
-          : "border-dashed border-[#393937] bg-[#0d0d0d] text-[#9a9a96]"
+          ? "border-[var(--accent-primary)] bg-[color-mix(in_srgb,var(--accent-primary)_10%,transparent)] text-[var(--text-primary)]"
+          : "!border-dashed muted"
       } ${disabled ? "opacity-50" : ""}`}
     >
-      <span className="mono text-[10px] uppercase tracking-[0.14em] text-[#d8ff3e]">
+      <span className="kicker">
         {active ? "Release to load" : "Drop zone"}
       </span>
       <p className="mt-1">

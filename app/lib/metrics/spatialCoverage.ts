@@ -75,7 +75,7 @@ export function renderCoverageHeatmap(
   for (let r = 0; r < coverage.rows; r++) {
     for (let c = 0; c < coverage.cols; c++) {
       const count = coverage.cells[r][c];
-      ctx.fillStyle = `rgba(216,255,62,${0.08 + (count / max) * 0.45})`;
+      ctx.fillStyle = `rgba(126,231,255,${0.08 + (count / max) * 0.45})`;
       ctx.fillRect(c * cellW, r * cellH, cellW, cellH);
       ctx.strokeStyle = "rgba(255,255,255,0.15)";
       ctx.strokeRect(c * cellW, r * cellH, cellW, cellH);

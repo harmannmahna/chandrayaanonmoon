@@ -27,7 +27,7 @@ const SLOTS: { key: ImageKey; title: string; hint: string }[] = [
 ];
 
 function highlightClass(active: boolean): string {
-  return active ? "ring-2 ring-[#d8ff3e] ring-offset-2 ring-offset-black" : "";
+  return active ? "walkthrough-ring" : "";
 }
 
 function HomePageInner() {
@@ -262,12 +262,12 @@ function HomePageInner() {
 
   return (
     <div className="space-y-6">
-      <section className="border border-[#292927] bg-[#0d0d0d] p-6">
-        <div className="mono text-[10px] uppercase tracking-[0.14em] text-[#d8ff3e]">Mission</div>
-        <h1 className="mt-2 max-w-3xl text-4xl font-medium tracking-tight text-white">
+      <section className="panel p-6">
+        <div className="kicker">Mission</div>
+        <h1 className="mt-2 max-w-3xl text-4xl font-medium tracking-tight text-[var(--text-primary)]">
           Align multi-modal lunar images for Chandrayaan-2 × LRO analysis
         </h1>
-        <p className="mt-3 max-w-3xl text-sm leading-7 text-[#9a9a96]">
+        <p className="muted mt-3 max-w-3xl text-sm leading-7">
           Upload three products or load a demo, then run CLAHE → matching → RANSAC → optional sub-pixel refinement → warp → metrics/export.
         </p>
         <div className="mt-5 flex flex-wrap gap-3">
@@ -276,7 +276,7 @@ function HomePageInner() {
             data-walkthrough="demo-load"
             onClick={() => loadDemo("demo_ch2_lro_01")}
             disabled={loadingDemo || working}
-            className={`bg-[#d8ff3e] px-4 py-3 text-[10px] uppercase tracking-[0.1em] text-black mono disabled:opacity-40 ${highlightClass(currentTarget === "demo-load")}`}
+            className={`btn-primary ${highlightClass(currentTarget === "demo-load")}`}
           >
             {loadingDemo ? "Loading…" : "Load demo set"}
           </button>
@@ -284,18 +284,18 @@ function HomePageInner() {
             type="button"
             onClick={() => loadDemo("synthetic_gt_01")}
             disabled={loadingDemo || working}
-            className="border border-[#424240] px-4 py-3 text-[10px] uppercase tracking-[0.1em] text-[#d5d5d2] mono disabled:opacity-40"
+            className="btn-secondary disabled:opacity-40"
           >
             Synthetic ground-truth pair
           </button>
           <button
             type="button"
             onClick={() => setWalkthrough(true, 0)}
-            className="border border-[#424240] px-4 py-3 text-[10px] uppercase tracking-[0.1em] text-[#d5d5d2] mono"
+            className="btn-secondary"
           >
             Start judge walkthrough
           </button>
-          <label className="flex items-center gap-2 border border-[#292927] px-3 py-2 text-[10px] uppercase tracking-[0.1em] text-[#aaa] mono">
+          <label className="btn-ghost flex items-center gap-2">
             <input
               type="checkbox"
               checked={enableSubPixel}
@@ -304,7 +304,7 @@ function HomePageInner() {
             Enable sub-pixel refinement
           </label>
         </div>
-        <p className="mt-3 text-sm text-[#8a8a86]">{status}</p>
+        <p className="muted mt-3 text-sm">{status}</p>
       </section>
 
       <GlobalDropZoneBanner disabled={loadingDemo || working} onFilesDropped={assignDroppedFiles} />
@@ -312,14 +312,14 @@ function HomePageInner() {
       {toast ? (
         <div
           role="status"
-          className="border border-[#5a5418] bg-[rgba(40,36,8,0.9)] px-4 py-3 text-sm text-[#d8c23e]"
+          className="alert-warn px-4 py-3 text-sm"
         >
           {toast}
         </div>
       ) : null}
 
       {sizeWarnings.length > 0 ? (
-        <section className="border border-[#642828] bg-[rgba(43,5,5,0.85)] p-4 text-sm text-[#ff8c8c]">
+        <section className="alert-danger p-4 text-sm">
           {sizeWarnings.map((warning) => (
             <div key={warning}>{warning}</div>
           ))}
@@ -327,7 +327,7 @@ function HomePageInner() {
       ) : null}
 
       <section data-walkthrough="sensor-panel" className={`space-y-3 ${highlightClass(currentTarget === "sensor-panel")}`}>
-        <div className="mono text-[10px] uppercase tracking-[0.14em] text-[#888]">Sensor info</div>
+        <div className="kicker !text-[#9aa6c2]">Sensor info</div>
         <div className="grid gap-4 md:grid-cols-3">{sensorPanel}</div>
       </section>
 
@@ -350,16 +350,16 @@ function HomePageInner() {
       </section>
 
       <section className="grid gap-4 md:grid-cols-2">
-        <article data-walkthrough="stage-preprocess" className={`border border-[#292927] bg-[#0d0d0d] p-4 ${highlightClass(currentTarget === "stage-preprocess")}`}>
-          <div className="mono text-[10px] uppercase tracking-[0.12em] text-[#d8ff3e]">1 · Preprocess</div>
-          <p className="mt-3 text-sm leading-6 text-[#9a9a96]">
+        <article data-walkthrough="stage-preprocess" className={`panel p-4 ${highlightClass(currentTarget === "stage-preprocess")}`}>
+          <div className="kicker">1 · Preprocess</div>
+          <p className="muted mt-3 text-sm leading-6">
             CLAHE boosts local contrast in shadowed lunar terrain before correspondence finding.
           </p>
           <button
             type="button"
             disabled={!ready || working}
             onClick={runPreprocess}
-            className="mt-4 bg-[#d8ff3e] px-3 py-2 text-[10px] uppercase tracking-[0.1em] text-black disabled:opacity-30 mono"
+            className="btn-primary mt-4"
           >
             {working && stage === "input" ? "Processing…" : processed ? "Re-run CLAHE" : "Run CLAHE × 3"}
           </button>
@@ -373,16 +373,16 @@ function HomePageInner() {
           ) : null}
         </article>
 
-        <article data-walkthrough="stage-match" className={`border border-[#292927] bg-[#0d0d0d] p-4 ${highlightClass(currentTarget === "stage-match" || currentTarget === "stage-ransac")}`}>
-          <div className="mono text-[10px] uppercase tracking-[0.12em] text-[#d8ff3e]">2 · Match + RANSAC + Warp</div>
-          <p className="mt-3 text-sm leading-6 text-[#9a9a96]">
+        <article data-walkthrough="stage-match" className={`panel p-4 ${highlightClass(currentTarget === "stage-match" || currentTarget === "stage-ransac")}`}>
+          <div className="kicker">2 · Match + RANSAC + Warp</div>
+          <p className="muted mt-3 text-sm leading-6">
             LoFTR-style matching, RANSAC homography, optional sub-pixel refinement, then warp/overlay for every pair.
           </p>
           <button
             type="button"
             disabled={!processed || working}
             onClick={runMatchingPipeline}
-            className="mt-4 bg-[#d8ff3e] px-3 py-2 text-[10px] uppercase tracking-[0.1em] text-black disabled:opacity-30 mono"
+            className="btn-primary mt-4"
           >
             {working && processed && !pairs ? "Running pipeline…" : pairs ? "Re-run pairs" : "Run full pair pipeline"}
           </button>
@@ -392,7 +392,7 @@ function HomePageInner() {
       {pairs && active ? (
         <section data-walkthrough="stage-results" className={`space-y-4 ${highlightClass(currentTarget === "stage-results" || currentTarget === "metrics-panel" || currentTarget === "exports-panel")}`}>
           {active.metrics.quality === "Unreliable" ? (
-            <div className="border border-[#642828] bg-[rgba(43,5,5,0.9)] p-4 text-sm text-[#ff8c8c]">
+            <div className="alert-danger p-4 text-sm">
               Registration quality: Unreliable – results may be incorrect. Try another pair, adjust inputs, or treat exports as experimental.
             </div>
           ) : null}
@@ -403,10 +403,8 @@ function HomePageInner() {
                 key={pair.id}
                 type="button"
                 onClick={() => setSelectedPair(pair.id)}
-                className={`border px-3 py-2 text-[10px] uppercase tracking-[0.1em] mono ${
-                  selectedPair === pair.id
-                    ? "border-[#d8ff3e] bg-[#151515] text-white"
-                    : "border-[#292927] text-[#777]"
+                className={`btn-ghost ${
+                  selectedPair === pair.id ? "nav-link-active border-[var(--accent-primary)] text-[var(--text-primary)]" : ""
                 }`}
               >
                 {pair.label} · {pairs[pair.id].ransac.inliers.length} inliers
@@ -414,7 +412,7 @@ function HomePageInner() {
             ))}
           </div>
 
-          <div className="flex flex-wrap gap-2 border border-[#292927] bg-[#0d0d0d] p-2">
+          <div className="panel flex flex-wrap gap-2 p-2">
             {[
               { id: "pipeline" as const, label: "Results", target: "metrics-panel" },
               { id: "coverage" as const, label: "Coverage", target: "metrics-panel" },
@@ -429,8 +427,8 @@ function HomePageInner() {
                   setActiveTab(tab.id);
                   if (tab.id === "baseline" && !baseline.classical) runBaseline();
                 }}
-                className={`px-3 py-2 text-[10px] uppercase tracking-[0.1em] mono ${
-                  activeTab === tab.id ? "bg-[#151515] text-white shadow-[inset_0_-1px_0_#d8ff3e]" : "text-[#777]"
+                className={`nav-link ${
+                  activeTab === tab.id ? "nav-link-active" : ""
                 } ${highlightClass(currentTarget === tab.target)}`}
               >
                 {tab.label}
@@ -441,31 +439,31 @@ function HomePageInner() {
           {activeTab === "pipeline" ? (
             <div className="space-y-4">
               <div className="grid gap-4 md:grid-cols-4">
-                <div className="border border-[#292927] bg-[#101010] p-4">
-                  <div className="mono text-[9px] uppercase tracking-[0.12em] text-[#666]">RMSE</div>
-                  <div className="mt-2 text-2xl text-[#d8ff3e]">{active.metrics.rmse.toFixed(2)} px</div>
+                <div className="panel p-4">
+                  <div className="kicker !text-[9px] opacity-70">RMSE</div>
+                  <div className="mt-2 text-2xl text-[var(--accent-primary)]">{active.metrics.rmse.toFixed(2)} px</div>
                   {active.metrics.refinedRmse != null ? (
-                    <div className="mt-1 text-xs text-[#8a8a86]">
+                    <div className="muted mt-1 text-xs">
                       Refined RMSE: {active.metrics.refinedRmse.toFixed(2)} px
                     </div>
                   ) : null}
                 </div>
-                <div className="border border-[#292927] bg-[#101010] p-4">
-                  <div className="mono text-[9px] uppercase tracking-[0.12em] text-[#666]">Inlier ratio</div>
-                  <div className="mt-2 text-2xl text-white">{(active.metrics.inlierRatio * 100).toFixed(1)}%</div>
-                  <div className="mt-1 text-xs text-[#8a8a86]">
+                <div className="panel p-4">
+                  <div className="kicker !text-[9px] opacity-70">Inlier ratio</div>
+                  <div className="mt-2 text-2xl text-[var(--text-primary)]">{(active.metrics.inlierRatio * 100).toFixed(1)}%</div>
+                  <div className="muted mt-1 text-xs">
                     {active.metrics.inlierCount}/{active.metrics.totalMatches}
                   </div>
                 </div>
-                <div className="border border-[#292927] bg-[#101010] p-4">
-                  <div className="mono text-[9px] uppercase tracking-[0.12em] text-[#666]">Coverage</div>
-                  <div className="mt-2 text-2xl text-white">{(active.metrics.coverage * 100).toFixed(0)}%</div>
-                  <div className="mt-1 text-xs text-[#8a8a86]">
+                <div className="panel p-4">
+                  <div className="kicker !text-[9px] opacity-70">Coverage</div>
+                  <div className="mt-2 text-2xl text-[var(--text-primary)]">{(active.metrics.coverage * 100).toFixed(0)}%</div>
+                  <div className="muted mt-1 text-xs">
                     Uniform: {active.metrics.uniformRegistration ? "Yes" : "No"}
                   </div>
                 </div>
-                <div className="border border-[#292927] bg-[#101010] p-4">
-                  <div className="mono text-[9px] uppercase tracking-[0.12em] text-[#666]">Quality</div>
+                <div className="panel p-4">
+                  <div className="kicker !text-[9px] opacity-70">Quality</div>
                   <div className="mt-3"><QualityBadge quality={active.metrics.quality} /></div>
                 </div>
               </div>
@@ -483,25 +481,25 @@ function HomePageInner() {
               />
 
               <div className="grid gap-4 md:grid-cols-2">
-                <div className="border border-[#292927] bg-[#101010] p-4">
-                  <div className="mono text-[10px] uppercase tracking-[0.12em] text-[#888]">Registered / overlay</div>
+                <div className="panel p-4">
+                  <div className="kicker">Registered / overlay</div>
                   <div className="mt-3 grid grid-cols-2 gap-2">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={active.warpedPreviewUrl} alt="Warped" className="h-40 w-full object-contain grayscale" />
+                    <img src={active.warpedPreviewUrl} alt="Warped" className="canvas-frame h-40 w-full object-contain grayscale" />
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={active.overlayPreviewUrl} alt="Overlay" className="h-40 w-full object-contain grayscale" />
+                    <img src={active.overlayPreviewUrl} alt="Overlay" className="canvas-frame h-40 w-full object-contain grayscale" />
                   </div>
                 </div>
-                <div data-walkthrough="exports-panel" className="border border-[#292927] bg-[#101010] p-4">
-                  <div className="mono text-[10px] uppercase tracking-[0.12em] text-[#888]">Homography + exports</div>
-                  <div className="mt-3 grid grid-cols-3 gap-1 mono text-[10px] text-[#bbb]">
+                <div data-walkthrough="exports-panel" className="panel p-4">
+                  <div className="kicker">Homography + exports</div>
+                  <div className="mt-3 grid grid-cols-3 gap-1 mono text-[10px] text-[var(--text-muted)]">
                     {active.ransac.H?.flat().map((v, i) => (
-                      <code key={i} className="border border-[#292927] px-2 py-1 text-right">{v.toFixed(5)}</code>
+                      <code key={i} className="panel-muted px-2 py-1 text-right">{v.toFixed(5)}</code>
                     ))}
                   </div>
                   {active.metrics.subPixel ? (
-                    <div className="mt-4 space-y-1 text-sm text-[#9a9a96]">
-                      <div className="mono text-[10px] uppercase tracking-[0.12em] text-[#d8ff3e]">Sub-pixel refinement</div>
+                    <div className="muted mt-4 space-y-1 text-sm">
+                      <div className="kicker">Sub-pixel refinement</div>
                       <div>Refined points: {active.metrics.subPixel.refinedCount}/{active.metrics.subPixel.attempted}</div>
                       <div>Median shift: {active.metrics.subPixel.medianShift.toFixed(3)} px</div>
                       <div>
@@ -512,14 +510,14 @@ function HomePageInner() {
                   <button
                     type="button"
                     onClick={() => exportPairResults(active, processed![active.right].previewUrl)}
-                    className="mt-4 border border-[#424240] px-3 py-2 text-[10px] uppercase tracking-[0.1em] text-[#d5d5d2] mono"
+                    className="btn-secondary mt-4"
                   >
                     Export pair package {active.metrics.quality === "Unreliable" ? "(experimental)" : ""}
                   </button>
                   <button
                     type="button"
                     onClick={() => exportAllMetrics(Object.values(pairs))}
-                    className="mt-2 ml-2 border border-[#424240] px-3 py-2 text-[10px] uppercase tracking-[0.1em] text-[#d5d5d2] mono"
+                    className="btn-secondary mt-2 ml-2"
                   >
                     Export all metrics.json
                   </button>
@@ -532,20 +530,20 @@ function HomePageInner() {
 
           {activeTab === "baseline" ? (
             <div data-walkthrough="baseline-tab" className="space-y-4">
-              <p className="text-sm leading-6 text-[#9a9a96]">
+              <p className="muted text-sm leading-6">
                 Classical methods (SIFT/ORB) rely on local appearance and can struggle with large illumination or scale changes.
                 Our LoFTR-style matcher uses broader context and is more robust to such changes.
               </p>
-              {working && !baseline.classical ? <div className="text-sm text-[#d8c23e]">Running baseline…</div> : null}
+              {working && !baseline.classical ? <div className="text-sm text-[var(--warn)]">Running baseline…</div> : null}
               {baseline.classical && baseline.loftr ? (
                 <div className="grid gap-4 md:grid-cols-2">
                   {[
-                    { label: "Classical ORB-like", result: baseline.classical, color: "text-[#ff8c8c]" },
-                    { label: "LoFTR-style adapter", result: baseline.loftr, color: "text-[#d8ff3e]" },
+                    { label: "Classical ORB-like", result: baseline.classical, color: "text-[var(--quality-bad)]" },
+                    { label: "LoFTR-style adapter", result: baseline.loftr, color: "text-[var(--accent-primary)]" },
                   ].map((item) => (
-                    <div key={item.label} className="border border-[#292927] bg-[#101010] p-4">
-                      <div className={`mono text-[10px] uppercase tracking-[0.12em] ${item.color}`}>{item.label}</div>
-                      <div className="mt-3 space-y-1 text-sm text-[#9a9a96]">
+                    <div key={item.label} className="panel p-4">
+                      <div className={`kicker ${item.color}`}>{item.label}</div>
+                      <div className="muted mt-3 space-y-1 text-sm">
                         <div>Matches: {item.result.metrics.totalMatches}</div>
                         <div>Inliers: {item.result.metrics.inlierCount}</div>
                         <div>Inlier ratio: {(item.result.metrics.inlierRatio * 100).toFixed(1)}%</div>
@@ -572,7 +570,7 @@ function HomePageInner() {
                   type="button"
                   disabled={!processed || working}
                   onClick={runBaseline}
-                  className="border border-[#424240] px-3 py-2 text-[10px] uppercase tracking-[0.1em] text-[#d5d5d2] mono"
+                  className="btn-secondary"
                 >
                   Run baseline comparison
                 </button>
@@ -581,46 +579,46 @@ function HomePageInner() {
           ) : null}
 
           {activeTab === "gt" ? (
-            <div data-walkthrough="gt-panel" className="space-y-4 border border-[#292927] bg-[#0d0d0d] p-4">
+            <div data-walkthrough="gt-panel" className="panel space-y-4 p-4">
               {active.metrics.groundTruth ? (
                 <>
-                  <p className="text-sm leading-6 text-[#9a9a96]">{active.metrics.groundTruth.note}</p>
+                  <p className="muted text-sm leading-6">{active.metrics.groundTruth.note}</p>
                   <div className="grid gap-4 md:grid-cols-2">
                     <div>
-                      <div className="mono text-[10px] uppercase tracking-[0.12em] text-[#888]">H_gt</div>
-                      <div className="mt-2 grid grid-cols-3 gap-1 mono text-[10px] text-[#bbb]">
+                      <div className="kicker">H_gt</div>
+                      <div className="mt-2 grid grid-cols-3 gap-1 mono text-[10px] text-[var(--text-muted)]">
                         {active.metrics.groundTruth.H_gt.flat().map((v, i) => (
-                          <code key={i} className="border border-[#292927] px-2 py-1 text-right">{v.toFixed(5)}</code>
+                          <code key={i} className="panel-muted px-2 py-1 text-right">{v.toFixed(5)}</code>
                         ))}
                       </div>
                     </div>
                     <div>
-                      <div className="mono text-[10px] uppercase tracking-[0.12em] text-[#888]">H_est</div>
-                      <div className="mt-2 grid grid-cols-3 gap-1 mono text-[10px] text-[#bbb]">
+                      <div className="kicker">H_est</div>
+                      <div className="mt-2 grid grid-cols-3 gap-1 mono text-[10px] text-[var(--text-muted)]">
                         {active.metrics.groundTruth.H_est.flat().map((v, i) => (
-                          <code key={i} className="border border-[#292927] px-2 py-1 text-right">{v.toFixed(5)}</code>
+                          <code key={i} className="panel-muted px-2 py-1 text-right">{v.toFixed(5)}</code>
                         ))}
                       </div>
                     </div>
                   </div>
                   <div className="grid gap-4 md:grid-cols-3">
-                    <div className="border border-[#292927] p-3">
-                      <div className="mono text-[9px] uppercase tracking-[0.12em] text-[#666]">Max corner error</div>
-                      <div className="mt-2 text-xl text-white">{active.metrics.groundTruth.maxCornerError.toFixed(3)} px</div>
+                    <div className="panel-muted p-3">
+                      <div className="kicker !text-[9px] opacity-70">Max corner error</div>
+                      <div className="mt-2 text-xl text-[var(--text-primary)]">{active.metrics.groundTruth.maxCornerError.toFixed(3)} px</div>
                     </div>
-                    <div className="border border-[#292927] p-3">
-                      <div className="mono text-[9px] uppercase tracking-[0.12em] text-[#666]">Mean corner error</div>
-                      <div className="mt-2 text-xl text-white">{active.metrics.groundTruth.meanCornerError.toFixed(3)} px</div>
+                    <div className="panel-muted p-3">
+                      <div className="kicker !text-[9px] opacity-70">Mean corner error</div>
+                      <div className="mt-2 text-xl text-[var(--text-primary)]">{active.metrics.groundTruth.meanCornerError.toFixed(3)} px</div>
                     </div>
-                    <div className="border border-[#292927] p-3">
-                      <div className="mono text-[9px] uppercase tracking-[0.12em] text-[#666]">Mean |H| diff</div>
-                      <div className="mt-2 text-xl text-white">{active.metrics.groundTruth.meanAbsDiff.toFixed(4)}</div>
+                    <div className="panel-muted p-3">
+                      <div className="kicker !text-[9px] opacity-70">Mean |H| diff</div>
+                      <div className="mt-2 text-xl text-[var(--text-primary)]">{active.metrics.groundTruth.meanAbsDiff.toFixed(4)}</div>
                     </div>
                   </div>
                 </>
               ) : (
-                <p className="text-sm text-[#9a9a96]">
-                  Load the <strong className="text-white">Synthetic ground-truth pair</strong> demo, run the pipeline, then reopen this tab to compare H_est against known H_gt.
+                <p className="muted text-sm">
+                  Load the <strong className="text-[var(--text-primary)]">Synthetic ground-truth pair</strong> demo, run the pipeline, then reopen this tab to compare H_est against known H_gt.
                 </p>
               )}
             </div>
@@ -645,7 +643,7 @@ function HomePageInner() {
 
 export default function HomePage() {
   return (
-    <Suspense fallback={<div className="text-sm text-[#888]">Loading register workspace…</div>}>
+    <Suspense fallback={<div className="muted text-sm">Loading register workspace…</div>}>
       <HomePageInner />
     </Suspense>
   );

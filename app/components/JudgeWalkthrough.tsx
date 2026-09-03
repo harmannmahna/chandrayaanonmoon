@@ -94,48 +94,48 @@ export function JudgeWalkthrough({ open, stepIndex, onClose, onPrev, onNext, onJ
   const progress = ((stepIndex + 1) / JUDGE_STEPS.length) * 100;
 
   return (
-    <aside className="fixed bottom-4 right-4 z-50 w-[min(420px,calc(100vw-2rem))] border border-[#292927] bg-[#0d0d0d] shadow-[0_20px_60px_rgba(0,0,0,0.55)]">
-      <div className="flex items-center justify-between border-b border-[#292927] px-4 py-3">
+    <aside className="panel fixed bottom-4 right-4 z-50 w-[min(420px,calc(100vw-2rem))]">
+      <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3">
         <div>
-          <div className="mono text-[10px] uppercase tracking-[0.14em] text-[#d8ff3e]">Judge walkthrough</div>
-          <div className="mt-1 text-sm text-white">
+          <div className="kicker">Judge walkthrough</div>
+          <div className="mt-1 text-sm text-[var(--text-primary)]">
             Step {stepIndex + 1} / {JUDGE_STEPS.length}
           </div>
         </div>
         <button
           type="button"
           onClick={onClose}
-          className="border border-[#424240] px-2 py-1 text-[10px] uppercase tracking-[0.1em] text-[#aaa] mono"
+          className="btn-ghost !px-2 !py-1"
         >
           Close
         </button>
       </div>
 
-      <div className="h-1 bg-[#1a1a18]">
-        <div className="h-full bg-[#d8ff3e]" style={{ width: `${progress}%` }} />
+      <div className="h-1 bg-[color-mix(in_srgb,var(--accent-secondary)_18%,transparent)]">
+        <div className="h-full bg-[var(--accent-primary)]" style={{ width: `${progress}%` }} />
       </div>
 
       <div className="space-y-3 px-4 py-4">
-        <h3 className="text-lg font-medium tracking-tight text-white">{step.title}</h3>
-        <p className="text-sm leading-6 text-[#9a9a96]">{step.body}</p>
+        <h3 className="text-lg font-medium tracking-tight text-[var(--text-primary)]">{step.title}</h3>
+        <p className="muted text-sm leading-6">{step.body}</p>
         {step.href ? (
           <Link
             href={step.href}
-            className="inline-flex border border-[#d8ff3e] bg-[#151515] px-3 py-2 text-[10px] uppercase tracking-[0.1em] text-[#d8ff3e] mono"
+            className="btn-secondary"
           >
             Open Context page
           </Link>
         ) : null}
       </div>
 
-      <div className="flex gap-1 overflow-x-auto border-t border-[#292927] px-3 py-2">
+      <div className="flex gap-1 overflow-x-auto border-t border-[var(--border)] px-3 py-2">
         {JUDGE_STEPS.map((item, index) => (
           <button
             key={item.id}
             type="button"
             onClick={() => onJump(index)}
             className={`min-w-7 rounded px-2 py-1 text-[10px] mono ${
-              index === stepIndex ? "bg-[#d8ff3e] text-black" : "bg-[#151515] text-[#777]"
+              index === stepIndex ? "btn-primary !px-2 !py-1" : "bg-[rgba(255,255,255,0.04)] text-[var(--text-muted)]"
             }`}
             aria-label={`Jump to step ${index + 1}`}
           >
@@ -144,19 +144,19 @@ export function JudgeWalkthrough({ open, stepIndex, onClose, onPrev, onNext, onJ
         ))}
       </div>
 
-      <div className="flex items-center justify-between border-t border-[#292927] px-4 py-3">
+      <div className="flex items-center justify-between border-t border-[var(--border)] px-4 py-3">
         <button
           type="button"
           onClick={onPrev}
           disabled={stepIndex === 0}
-          className="border border-[#424240] px-3 py-2 text-[10px] uppercase tracking-[0.1em] text-[#d5d5d2] disabled:opacity-30 mono"
+          className="btn-secondary"
         >
           Back
         </button>
         <button
           type="button"
           onClick={onNext}
-          className="bg-[#d8ff3e] px-3 py-2 text-[10px] uppercase tracking-[0.1em] text-black mono"
+          className="btn-primary"
         >
           {stepIndex === JUDGE_STEPS.length - 1 ? "Finish" : "Next"}
         </button>

@@ -102,19 +102,19 @@ export function DropZoneImageSlot({
         const file = filesFromDataTransfer(event.dataTransfer)[0];
         void handleFile(file);
       }}
-      className={`cursor-pointer border bg-[#101010] p-4 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[#d8ff3e] ${
+      className={`panel cursor-pointer p-4 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] ${
         dragOver
-          ? "border-[#d8ff3e] bg-[rgba(216,255,62,0.06)]"
+          ? "border-[var(--accent-primary)] bg-[color-mix(in_srgb,var(--accent-primary)_10%,transparent)]"
           : image
-            ? "border-[#292927]"
-            : "border-dashed border-[#393937]"
+            ? ""
+            : "!border-dashed"
       } ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
     >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <div className="mono text-[10px] uppercase tracking-[0.14em] text-[#666]">{label}</div>
+          <div className="kicker">{label}</div>
           {hint || sensorInfo?.notes ? (
-            <div className="mt-2 text-sm text-[#9a9a96]">{sensorInfo?.notes || hint}</div>
+            <div className="muted mt-2 text-sm">{sensorInfo?.notes || hint}</div>
           ) : null}
         </div>
         {image ? (
@@ -127,7 +127,7 @@ export function DropZoneImageSlot({
               onClear();
             }}
             disabled={disabled || busy}
-            className="shrink-0 border border-[#424240] px-2 py-1 text-[10px] uppercase tracking-[0.1em] text-[#d5d5d2] mono hover:border-[#d8ff3e] hover:text-white disabled:opacity-40"
+            className="btn-ghost shrink-0 !px-2 !py-1 hover:border-[var(--accent-primary)] hover:text-[var(--text-primary)] disabled:opacity-40"
           >
             Clear
           </button>
@@ -135,8 +135,8 @@ export function DropZoneImageSlot({
       </div>
 
       <div
-        className={`mt-4 flex h-40 items-center justify-center overflow-hidden bg-[#050505] ${
-          dragOver ? "border border-[#d8ff3e]" : "border border-[#292927]"
+        className={`canvas-frame mt-4 flex h-40 items-center justify-center overflow-hidden ${
+          dragOver ? "border-[var(--accent-primary)]" : ""
         }`}
       >
         {image ? (
@@ -144,10 +144,10 @@ export function DropZoneImageSlot({
           <img src={image.previewUrl} alt={`${label} preview`} className="h-full w-full object-cover grayscale" />
         ) : (
           <div className="px-4 text-center">
-            <div className="text-xs text-[#d5d5d2]">
+            <div className="text-xs text-[var(--text-primary)]">
               {busy ? "Reading file…" : dragOver ? "Drop to load this slot" : "Click to upload or drag & drop"}
             </div>
-            <div className="mt-2 text-[10px] leading-5 text-[#666]">{SUPPORTED_FORMATS_LABEL}</div>
+            <div className="muted mt-2 text-[10px] leading-5">{SUPPORTED_FORMATS_LABEL}</div>
           </div>
         )}
       </div>
@@ -165,7 +165,7 @@ export function DropZoneImageSlot({
       />
 
       {image ? (
-        <div className="mt-3 truncate text-[11px] text-[#777]">
+        <div className="muted mt-3 truncate text-[11px]">
           {image.fileName}
           {image.originalWidth && image.originalHeight
             ? ` · ${image.originalWidth}×${image.originalHeight}`
@@ -173,7 +173,7 @@ export function DropZoneImageSlot({
         </div>
       ) : null}
 
-      {localError ? <p className="mt-3 text-xs leading-5 text-[#ff8c8c]">{localError}</p> : null}
+      {localError ? <p className="mt-3 text-xs leading-5 text-[var(--danger)]">{localError}</p> : null}
     </div>
   );
 }
