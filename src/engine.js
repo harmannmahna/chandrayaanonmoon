@@ -315,11 +315,19 @@ export function computeMetrics(matches, inliers, H, width, height) {
     return Math.hypot(p.x - m.target.x, p.y - m.target.y);
   });
   const rmse = errors.length ? Math.sqrt(errors.reduce((sum, e) => sum + e * e, 0) / errors.length) : 0;
-  const cells = new Set(inliers.map((m) => `${Math.min(3, Math.floor(m.target.x / width * 4))}:${Math.min(2, Math.floor(m.target.y / height * 3))}`));
+  const counts = Array.from({ length: 12 }, () => 0);
+  for (const m of inliers) {
+    const cx = Math.min(3, Math.floor(m.target.x / width * 4));
+    const cy = Math.min(2, Math.floor(m.target.y / height * 3));
+    counts[cy * 4 + cx] += 1;
+  }
+  const occupied = counts.filter((count) => count > 0).length;
   return {
     rmse,
     inlierRatio: matches.length ? inliers.length / matches.length : 0,
-    coverage: cells.size / 12,
+    coverage: occupied / 12,
+    occupied,
+    cells: counts,
     total: matches.length,
     inliers: inliers.length,
   };

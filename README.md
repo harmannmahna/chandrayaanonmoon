@@ -4,14 +4,33 @@ A black-and-white, browser-based prototype for comparing three lunar images acro
 
 ## Pipeline
 
-1. Upload three image products as images or embedded-image XML.
+1. Upload three image products as images or embedded-image XML, or click **Load demo set**.
 2. Normalize every decodable input to PNG.
 3. Enhance local contrast with CLAHE.
 4. Generate correspondences for A↔B, A↔C, and B↔C.
 5. Estimate three homographies with RANSAC.
 6. Warp and inspect each pair independently.
 
-The final screen provides registered images, 50/50 overlays, visual match maps, reprojection RMSE, inlier ratios, spatial coverage, three homography matrices, and combined CSV/JSON match data.
+The final screen provides:
+
+- registered images and 50/50 overlays
+- visual match maps
+- a three-pair scorecard
+- reprojection RMSE, inlier ratios, and spatial coverage
+- a 4×3 coverage grid for uniform-distribution checks
+- three homography matrices
+- combined CSV/JSON match data
+
+## Demo samples
+
+`public/samples/` includes:
+
+- `chandrayaan2_ohr.png` — synthetic source A
+- `lro_reference.png` — synthetic reference B
+- `epoch_c.png` — synthetic third image C
+- `epoch_c_embedded.xml` — image C wrapped as base64-embedded XML
+
+Use **Load demo set** on the first screen to exercise PNG normalization plus XML conversion without bringing your own files.
 
 ## XML and PNG conversion
 
