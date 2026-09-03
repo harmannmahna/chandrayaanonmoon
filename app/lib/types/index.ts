@@ -13,3 +13,4 @@ export type {
   MetricsResult,
   PairPipelineResult,
 } from "./pipeline";
+export { PAIR_DEFS } from "./pipeline";
