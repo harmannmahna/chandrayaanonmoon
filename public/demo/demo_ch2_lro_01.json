@@ -1,0 +1,40 @@
+{
+  "id": "demo_ch2_lro_01",
+  "title": "Chandrayaan-2 × LRO multi-modal patch",
+  "description": "Synthetic demo triplet approximating OHRC, LRO NAC, and IIRS-derived products of the same lunar region under different illumination and scale.",
+  "images": {
+    "A": {
+      "src": "/demo/ohrc_patch.png",
+      "name": "ohrc_patch.png",
+      "sensorInfo": {
+        "type": "OHRC",
+        "label": "OHRC-like (Chandrayaan-2)",
+        "approxGSD": 0.3,
+        "modality": "panchromatic",
+        "notes": "High-resolution optical, similar to Chandrayaan-2 OHRC (~0.25–0.32 m/px)."
+      }
+    },
+    "B": {
+      "src": "/demo/lro_nac_patch.png",
+      "name": "lro_nac_patch.png",
+      "sensorInfo": {
+        "type": "LRO_NAC",
+        "label": "LRO NAC-like reference",
+        "approxGSD": 0.5,
+        "modality": "panchromatic",
+        "notes": "Reference map-like product similar to LRO Narrow Angle Camera imagery."
+      }
+    },
+    "C": {
+      "src": "/demo/iirs_embedded.xml",
+      "name": "iirs_embedded.xml",
+      "sensorInfo": {
+        "type": "IIRS",
+        "label": "IIRS-like (Chandrayaan-2)",
+        "approxGSD": 80,
+        "modality": "hyperspectral-derived",
+        "notes": "Hyperspectral-derived grayscale proxy for IIRS mineralogical context; demo C is XML with embedded PNG pixels."
+      }
+    }
+  }
+}
