@@ -38,6 +38,36 @@ export default function ContextPage() {
         </div>
       </section>
 
+      <section className="border border-[#292927] bg-[#0d0d0d] p-5">
+        <div className="mono text-[10px] uppercase tracking-[0.14em] text-[#d8ff3e]">Operational workflow</div>
+        <h2 className="mt-2 text-2xl font-medium text-white">Example use case</h2>
+        <p className="mt-3 text-sm leading-7 text-[#9a9a96]">A lunar scientist has:</p>
+        <ul className="mt-2 space-y-2 text-sm leading-7 text-[#9a9a96]">
+          <li>An OHRC-like strip over a candidate landing site.</li>
+          <li>An LRO reference mosaic of the same region.</li>
+        </ul>
+        <p className="mt-4 text-sm leading-7 text-[#9a9a96]">They use LUNA/REGISTER to:</p>
+        <ol className="mt-2 list-decimal space-y-2 pl-5 text-sm leading-7 text-[#9a9a96]">
+          <li>Upload OHRC-like (A) and LRO-like (B).</li>
+          <li>Run registration.</li>
+          <li>Inspect overlay and quality badge.</li>
+          <li>
+            Export:
+            <span className="mt-1 block space-x-2">
+              <code className="text-[#d8ff3e]">registered_OHRC.png</code>
+              <code className="text-[#d8ff3e]">match_points.csv</code>
+              <code className="text-[#d8ff3e]">metrics.json</code>
+            </span>
+          </li>
+        </ol>
+        <p className="mt-4 text-sm leading-7 text-[#9a9a96]">They then:</p>
+        <ul className="mt-2 space-y-2 text-sm leading-7 text-[#9a9a96]">
+          <li>Import <code className="text-[#d8ff3e]">registered_OHRC.png</code> into their GIS.</li>
+          <li>Use <code className="text-[#d8ff3e]">match_points.csv</code> as tie points for further bundle adjustment.</li>
+          <li>Combine with IIRS-like mineral maps to relate morphology and composition.</li>
+        </ul>
+      </section>
+
       <section className="border border-[#292927] bg-[#101010] p-5">
         <h2 className="text-2xl font-medium text-white">How registration helps</h2>
         <ul className="mt-4 space-y-3 text-sm leading-7 text-[#9a9a96]">
@@ -62,6 +92,27 @@ export default function ContextPage() {
             </div>
           ))}
         </div>
+      </section>
+
+      <section className="border border-[#292927] bg-[#101010] p-5">
+        <div className="mono text-[10px] uppercase tracking-[0.14em] text-[#d8ff3e]">Engineering extensions</div>
+        <h2 className="mt-2 text-2xl font-medium text-white">Real mission data</h2>
+        <p className="mt-3 text-sm leading-7 text-[#9a9a96]">For real Chandrayaan-2 / LRO usage, the pipeline would:</p>
+        <ul className="mt-3 space-y-2 text-sm leading-7 text-[#9a9a96]">
+          <li>Accept calibrated PDS products (e.g. <code className="text-[#d8ff3e]">.IMG</code> + label) via a server-side reader.</li>
+          <li>
+            Use spacecraft ephemeris and DTM/DEM data for:
+            <ul className="mt-2 list-disc space-y-1 pl-5">
+              <li>Better initial coarse alignment.</li>
+              <li>Physically motivated projection models beyond a single homography.</li>
+            </ul>
+          </li>
+          <li>Run matching and RANSAC on tiles for large rasters.</li>
+          <li>Validate against ground control points or high-accuracy reference maps.</li>
+        </ul>
+        <p className="mt-4 text-sm leading-7 text-[#9a9a96]">
+          This prototype demonstrates the core correspondence + registration logic; the data ingestion and geodesy layers are engineering extensions, not conceptual changes.
+        </p>
       </section>
 
       <PerformancePanel />
