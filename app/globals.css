@@ -96,11 +96,10 @@ select {
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(ellipse 80% 55% at 50% -10%, rgba(255, 255, 255, 0.07), transparent 55%),
-    radial-gradient(ellipse 70% 45% at 12% -8%, rgba(124, 90, 220, 0.22), transparent 52%),
-    radial-gradient(ellipse 55% 40% at 92% 6%, rgba(34, 160, 190, 0.16), transparent 48%),
-    radial-gradient(ellipse 60% 35% at 50% 112%, rgba(90, 40, 130, 0.18), transparent 50%),
-    #02040a;
+    radial-gradient(ellipse 90% 60% at 50% -12%, rgba(255, 255, 255, 0.06), transparent 55%),
+    radial-gradient(ellipse 70% 45% at 12% -8%, rgba(90, 70, 160, 0.14), transparent 52%),
+    radial-gradient(ellipse 55% 40% at 92% 6%, rgba(40, 90, 140, 0.1), transparent 48%),
+    #000000;
 }
 
 .space-backdrop::before,
@@ -111,9 +110,9 @@ select {
 }
 
 .space-backdrop::before {
-  opacity: 0.75;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Ccircle cx='8' cy='18' r='0.7' fill='white' opacity='0.9'/%3E%3Ccircle cx='36' cy='54' r='0.45' fill='white' opacity='0.55'/%3E%3Ccircle cx='72' cy='12' r='0.6' fill='white' opacity='0.75'/%3E%3Ccircle cx='118' cy='40' r='0.4' fill='white' opacity='0.45'/%3E%3Ccircle cx='148' cy='88' r='0.7' fill='white' opacity='0.85'/%3E%3Ccircle cx='24' cy='110' r='0.5' fill='white' opacity='0.5'/%3E%3Ccircle cx='64' cy='132' r='0.35' fill='white' opacity='0.4'/%3E%3Ccircle cx='98' cy='78' r='0.55' fill='white' opacity='0.7'/%3E%3Ccircle cx='132' cy='140' r='0.45' fill='white' opacity='0.6'/%3E%3Ccircle cx='50' cy='90' r='0.3' fill='white' opacity='0.35'/%3E%3C/svg%3E");
-  background-size: 160px 160px;
+  opacity: 0.95;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220' viewBox='0 0 220 220'%3E%3Ccircle cx='12' cy='24' r='0.8' fill='white' opacity='0.95'/%3E%3Ccircle cx='44' cy='70' r='0.45' fill='white' opacity='0.55'/%3E%3Ccircle cx='88' cy='18' r='0.7' fill='white' opacity='0.8'/%3E%3Ccircle cx='140' cy='52' r='0.4' fill='white' opacity='0.45'/%3E%3Ccircle cx='190' cy='100' r='0.85' fill='white' opacity='0.9'/%3E%3Ccircle cx='30' cy='140' r='0.5' fill='white' opacity='0.5'/%3E%3Ccircle cx='78' cy='170' r='0.35' fill='white' opacity='0.4'/%3E%3Ccircle cx='120' cy='100' r='0.55' fill='white' opacity='0.7'/%3E%3Ccircle cx='168' cy='180' r='0.45' fill='white' opacity='0.6'/%3E%3Ccircle cx='60' cy='110' r='0.3' fill='white' opacity='0.35'/%3E%3Ccircle cx='200' cy='30' r='0.5' fill='white' opacity='0.65'/%3E%3Ccircle cx='105' cy='145' r='0.28' fill='white' opacity='0.4'/%3E%3Ccircle cx='18' cy='190' r='0.6' fill='white' opacity='0.75'/%3E%3Ccircle cx='155' cy='20' r='0.35' fill='white' opacity='0.5'/%3E%3Ccircle cx='210' cy='160' r='0.4' fill='white' opacity='0.55'/%3E%3C/svg%3E");
+  background-size: 220px 220px;
 }
 
 .space-backdrop::after {
@@ -369,16 +368,16 @@ select {
 /* ---- Cinematic moon hero (inspired by space landings; original assets) ---- */
 .cinematic-moon {
   position: relative;
-  width: min(72vw, 560px);
+  width: min(78vw, 620px);
   aspect-ratio: 1;
-  filter: drop-shadow(0 30px 60px rgba(0, 0, 0, 0.55));
+  filter: drop-shadow(0 40px 80px rgba(0, 0, 0, 0.7));
 }
 
 .cinematic-moon__glow {
   position: absolute;
-  inset: -18%;
+  inset: -22%;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 248, 230, 0.28), transparent 62%);
+  background: radial-gradient(circle, rgba(255, 248, 230, 0.32), transparent 64%);
   pointer-events: none;
 }
 
@@ -391,7 +390,7 @@ select {
 
 .cinematic-hero {
   position: relative;
-  height: 260vh;
+  height: 300vh;
   margin: 0 auto;
 }
 
@@ -402,6 +401,16 @@ select {
   overflow: hidden;
   display: grid;
   place-items: center;
+}
+
+.cinematic-hero__stars {
+  position: absolute;
+  inset: -8%;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Ccircle cx='10' cy='20' r='0.7' fill='white' opacity='0.9'/%3E%3Ccircle cx='50' cy='60' r='0.4' fill='white' opacity='0.5'/%3E%3Ccircle cx='90' cy='15' r='0.55' fill='white' opacity='0.75'/%3E%3Ccircle cx='140' cy='45' r='0.35' fill='white' opacity='0.45'/%3E%3Ccircle cx='160' cy='110' r='0.7' fill='white' opacity='0.85'/%3E%3Ccircle cx='30' cy='130' r='0.45' fill='white' opacity='0.55'/%3E%3Ccircle cx='75' cy='150' r='0.3' fill='white' opacity='0.4'/%3E%3Ccircle cx='115' cy='95' r='0.5' fill='white' opacity='0.7'/%3E%3C/svg%3E");
+  background-size: 180px 180px;
+  opacity: 0.55;
+  will-change: transform;
 }
 
 .cinematic-hero__moon-stage {
@@ -420,49 +429,87 @@ select {
 .cinematic-hero__content {
   position: relative;
   z-index: 2;
-  width: min(920px, 92vw);
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
+  width: min(1100px, 94vw);
+  height: min(78vh, 720px);
   padding: 1rem;
 }
 
 .cinematic-hero__card {
-  max-width: 34rem;
-  padding: 1.25rem 1.35rem;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: rgba(2, 5, 14, 0.42);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
-  animation: cinematic-card-in 420ms ease both;
+  position: absolute;
+  top: 50%;
+  width: min(36rem, 92%);
+  max-width: 36rem;
+  padding: 0.25rem 0.35rem;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  transition: opacity 0.05s linear;
+  will-change: opacity, transform;
+}
+
+.cinematic-hero__card--center {
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.cinematic-hero__card--center .cinematic-hero__body,
+.cinematic-hero__card--center .cinematic-hero__actions,
+.cinematic-hero__card--center .cinematic-hero__kicker {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.cinematic-hero__card--center .cinematic-hero__actions {
+  justify-content: center;
+}
+
+.cinematic-hero__card--left {
+  left: 0;
+  transform: translateY(-50%);
+  text-align: left;
+}
+
+.cinematic-hero__card--right {
+  right: 0;
+  left: auto;
+  transform: translateY(-50%);
+  text-align: left;
+}
+
+.cinematic-hero__kicker {
+  color: rgba(255, 255, 255, 0.72) !important;
 }
 
 .cinematic-hero__title {
-  margin: 0.7rem 0 0;
-  font-size: clamp(2.2rem, 6vw, 4.4rem);
-  line-height: 0.95;
-  letter-spacing: 0.02em;
+  margin: 0.55rem 0 0;
+  font-size: clamp(2.4rem, 7vw, 5rem);
+  line-height: 0.92;
+  letter-spacing: 0.01em;
   text-transform: uppercase;
   font-weight: 800;
+  font-stretch: condensed;
   white-space: pre-line;
   color: #fff;
-  text-shadow: 0 8px 40px rgba(0, 0, 0, 0.45);
+  text-shadow: 0 10px 48px rgba(0, 0, 0, 0.55);
 }
 
 .cinematic-hero__body {
-  margin: 0.9rem 0 0;
-  max-width: 34ch;
+  margin: 0.95rem 0 0;
+  max-width: 38ch;
   font-size: 0.98rem;
   line-height: 1.65;
   color: rgba(236, 242, 255, 0.82);
+  text-shadow: 0 4px 20px rgba(0, 0, 0, 0.55);
 }
 
 .cinematic-hero__actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.7rem;
-  margin-top: 1.15rem;
+  margin-top: 1.25rem;
 }
 
 .cinematic-btn {
@@ -470,9 +517,9 @@ select {
   align-items: center;
   justify-content: center;
   min-width: 8.5rem;
-  padding: 0.78rem 1.15rem;
+  padding: 0.82rem 1.2rem;
   font-size: 11px;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
   font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, monospace;
   transition: transform 0.15s ease, background-color 0.15s ease, color 0.15s ease;
@@ -487,11 +534,23 @@ select {
 .cinematic-btn--ghost {
   background: transparent;
   color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.75);
 }
 
 .cinematic-btn:hover {
   transform: translateY(-1px);
+}
+
+.cinematic-hero__chrome {
+  position: absolute;
+  left: 1rem;
+  right: 1rem;
+  bottom: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  align-items: flex-start;
+  z-index: 3;
 }
 
 .cinematic-hero__progress {
@@ -515,28 +574,38 @@ select {
   text-transform: uppercase;
 }
 
-@keyframes cinematic-card-in {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 @media (max-width: 768px) {
   .cinematic-hero {
-    height: 220vh;
+    height: 240vh;
   }
 
   .cinematic-moon {
-    width: min(88vw, 420px);
+    width: min(92vw, 440px);
   }
 
   .cinematic-hero__card {
     max-width: 100%;
+    width: 94%;
+  }
+
+  .cinematic-hero__card--left,
+  .cinematic-hero__card--right,
+  .cinematic-hero__card--center {
+    left: 50%;
+    right: auto;
+    transform: translate(-50%, -50%);
+    text-align: center;
+  }
+
+  .cinematic-hero__card--left .cinematic-hero__actions,
+  .cinematic-hero__card--right .cinematic-hero__actions,
+  .cinematic-hero__card--center .cinematic-hero__actions {
+    justify-content: center;
+  }
+
+  .cinematic-hero__body {
+    margin-left: auto;
+    margin-right: auto;
   }
 }
 
@@ -557,8 +626,23 @@ select {
     opacity: 0.55;
   }
 
+  .cinematic-hero__stars {
+    transform: none !important;
+  }
+
   .cinematic-hero__card {
-    animation: none;
+    position: relative;
+    top: auto;
+    left: auto !important;
+    right: auto !important;
+    transform: none !important;
+    opacity: 1 !important;
+    margin: 0 auto 1.5rem;
+    pointer-events: auto !important;
+  }
+
+  .cinematic-hero__content {
+    height: auto;
   }
 }
 
