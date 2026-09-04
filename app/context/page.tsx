@@ -17,7 +17,7 @@ export default function ContextPage() {
   return (
     <div className="relative mx-auto w-[min(1200px,94vw)] pb-12 pt-4">
       <section className="mission-hero !min-h-[58vh] !w-full !px-0">
-        <LunarBackdrop variant="large" position="right" opacity={0.3} />
+        <LunarBackdrop variant="large" position="right" opacity={0.68} src="/lunar/full-moon.png" />
         <div className="mission-hero__copy">
           <div className="kicker">Context & product spec</div>
           <h1 className="mission-hero__title">
@@ -50,7 +50,13 @@ export default function ContextPage() {
         <section className="space-y-4">
           <SectionLabel number="01" label="WHY REGISTRATION MATTERS" />
           <div className="relative overflow-hidden panel p-6">
-            <LunarBackdrop variant="small" position="right" opacity={0.16} className="!top-auto !bottom-[-20%]" />
+            <LunarBackdrop
+              variant="terrain"
+              position="right"
+              opacity={0.22}
+              src="/lunar/moon-horizon.png"
+              className="!top-auto !bottom-[-28%] !right-[-10%]"
+            />
             <div className="relative z-[1]">
               <h2 className="text-3xl font-medium tracking-tight text-[var(--text-primary)]">
                 Why registration matters for Chandrayaan-2

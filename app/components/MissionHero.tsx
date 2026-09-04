@@ -16,7 +16,14 @@ type Props = {
 export function MissionHero({ onStartDemo, onFocusUpload, loadingDemo, working }: Props) {
   return (
     <section className="mission-hero" aria-label="Mission introduction">
-      <LunarBackdrop variant="large" position="right" opacity={0.34} />
+      <LunarBackdrop variant="large" position="right" opacity={0.72} src="/lunar/full-moon.png" />
+      <LunarBackdrop
+        variant="terrain"
+        position="right"
+        opacity={0.18}
+        src="/lunar/moon-horizon.png"
+        className="mission-hero__horizon"
+      />
 
       <div className="mission-hero__copy">
         <div className="kicker">Lunar image registration system</div>

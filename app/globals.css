@@ -434,75 +434,89 @@ select {
   position: absolute;
   pointer-events: none;
   z-index: 0;
-  overflow: hidden;
-}
-
-.lunar-backdrop__orb {
-  width: 100%;
-  height: 100%;
-  display: grid;
-  place-items: center;
-  filter: grayscale(1) contrast(1.15) brightness(0.82);
-  mask-image: radial-gradient(circle at 50% 50%, #000 42%, transparent 72%);
-  -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 42%, transparent 72%);
+  overflow: visible;
 }
 
 .lunar-backdrop__img {
+  display: block;
   width: 100%;
   height: 100%;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.lunar-backdrop__img--disc {
+  object-fit: contain;
+  filter: grayscale(1) contrast(1.08) brightness(0.95);
+  border-radius: 50%;
+  mask-image: radial-gradient(circle at 50% 50%, #000 58%, transparent 78%);
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 58%, transparent 78%);
+}
+
+.lunar-backdrop__img--terrain {
   object-fit: cover;
-  filter: grayscale(1) contrast(1.2) brightness(0.72);
-  mask-image: linear-gradient(90deg, transparent 0%, #000 18%, #000 78%, transparent 100%),
-    linear-gradient(180deg, transparent 0%, #000 15%, #000 85%, transparent 100%);
-  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 18%, #000 78%, transparent 100%),
-    linear-gradient(180deg, transparent 0%, #000 15%, #000 85%, transparent 100%);
+  object-position: center 35%;
+  filter: grayscale(1) contrast(1.12) brightness(0.78);
+  mask-image: linear-gradient(90deg, transparent 0%, #000 12%, #000 88%, transparent 100%),
+    linear-gradient(180deg, transparent 0%, #000 10%, #000 78%, transparent 100%);
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 12%, #000 88%, transparent 100%),
+    linear-gradient(180deg, transparent 0%, #000 10%, #000 78%, transparent 100%);
   mask-composite: intersect;
   -webkit-mask-composite: source-in;
 }
 
+.lunar-backdrop__glow {
+  position: absolute;
+  inset: -12%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 248, 230, 0.2), transparent 62%);
+  pointer-events: none;
+  z-index: -1;
+}
+
 .lunar-backdrop--small {
-  width: min(42vw, 360px);
+  width: min(46vw, 380px);
   aspect-ratio: 1;
 }
 
 .lunar-backdrop--large {
-  width: min(78vw, 760px);
+  width: min(72vw, 700px);
   aspect-ratio: 1;
 }
 
 .lunar-backdrop--terrain {
-  width: min(90vw, 920px);
-  height: min(70vh, 640px);
+  width: min(96vw, 1100px);
+  height: min(72vh, 680px);
 }
 
 .lunar-backdrop--left {
-  left: -12%;
-  top: 8%;
+  left: -14%;
+  top: 4%;
 }
 
 .lunar-backdrop--right {
-  right: -18%;
-  top: 4%;
+  right: -16%;
+  top: -2%;
 }
 
 .lunar-backdrop--center {
   left: 50%;
-  top: 10%;
+  top: 6%;
   transform: translateX(-50%);
 }
 
 @media (max-width: 768px) {
   .lunar-backdrop--large,
   .lunar-backdrop--terrain {
-    width: min(100vw, 520px);
-    opacity: 0.18 !important;
+    width: min(110vw, 560px);
+    opacity: 0.22 !important;
   }
 
   .lunar-backdrop--right,
   .lunar-backdrop--left {
-    right: -20%;
+    right: -28%;
     left: auto;
-    top: 0;
+    top: 2%;
   }
 }
 
@@ -517,6 +531,16 @@ select {
   margin: 0 auto;
   width: min(1200px, 94vw);
   padding: 2.5rem 0 3rem;
+}
+
+.mission-hero__horizon {
+  right: -8% !important;
+  left: auto !important;
+  top: auto !important;
+  bottom: -28% !important;
+  width: min(100vw, 980px) !important;
+  height: min(48vh, 420px) !important;
+  z-index: 0;
 }
 
 .mission-hero__copy {
@@ -653,6 +677,10 @@ select {
   height: 100%;
   display: block;
   border-radius: 50%;
+  object-fit: contain;
+  filter: grayscale(1) contrast(1.05);
+  mask-image: radial-gradient(circle at 50% 50%, #000 60%, transparent 78%);
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 60%, transparent 78%);
 }
 
 .workspace-anchor {

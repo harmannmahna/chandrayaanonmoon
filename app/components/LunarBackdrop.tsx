@@ -1,5 +1,3 @@
-import { CinematicMoon } from "@/app/components/CinematicMoon";
-
 type Variant = "small" | "large" | "terrain";
 type Position = "left" | "right" | "center";
 
@@ -9,26 +7,31 @@ type Props = {
   opacity?: number;
   className?: string;
   /**
-   * Optional local terrain image. Prefer project assets under /public.
-   * TODO: replace with a properly licensed high-resolution lunar surface asset when available.
+   * Optional override. Defaults to local assets under /public/lunar.
+   * full-moon.png = disc · moon-horizon.png = terrain close-up.
    */
   src?: string;
 };
 
+const DEFAULT_SRC: Record<Variant, string> = {
+  small: "/lunar/full-moon.png",
+  large: "/lunar/full-moon.png",
+  terrain: "/lunar/moon-horizon.png",
+};
+
 /**
  * Decorative grayscale lunar visual. Never interactive.
- * Uses procedural moon by default; optional local PNG for terrain variants.
+ * Uses user-provided local moon photography under /public/lunar.
  */
 export function LunarBackdrop({
   variant = "large",
   position = "right",
-  opacity = 0.28,
+  opacity = 0.42,
   className = "",
   src,
 }: Props) {
-  const useTerrain = variant === "terrain" || Boolean(src);
-  // Local illustrative patches only — not photogrammetric mission products.
-  const terrainSrc = src ?? "/samples/lro_reference.png";
+  const imageSrc = src ?? DEFAULT_SRC[variant];
+  const isTerrain = variant === "terrain";
 
   return (
     <div
@@ -36,14 +39,15 @@ export function LunarBackdrop({
       className={`lunar-backdrop lunar-backdrop--${variant} lunar-backdrop--${position} ${className}`}
       style={{ opacity }}
     >
-      {useTerrain ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={terrainSrc} alt="" className="lunar-backdrop__img" loading="lazy" />
-      ) : (
-        <div className="lunar-backdrop__orb">
-          <CinematicMoon />
-        </div>
-      )}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={imageSrc}
+        alt=""
+        className={isTerrain ? "lunar-backdrop__img lunar-backdrop__img--terrain" : "lunar-backdrop__img lunar-backdrop__img--disc"}
+        loading="lazy"
+        decoding="async"
+      />
+      {!isTerrain ? <div className="lunar-backdrop__glow" /> : null}
     </div>
   );
 }
