@@ -6,7 +6,8 @@ import { JudgeWalkthrough, JUDGE_STEPS } from "@/app/components/JudgeWalkthrough
 import { SensorCard } from "@/app/components/SensorCard";
 import { DropZoneImageSlot } from "@/app/components/DropZoneImageSlot";
 import { GlobalDropZoneBanner } from "@/app/components/GlobalDropZoneBanner";
-import { CinematicHero } from "@/app/components/CinematicHero";
+import { MissionHero } from "@/app/components/MissionHero";
+import { SectionLabel } from "@/app/components/SectionLabel";
 import { CoveragePanel, MatchCanvas, QualityBadge } from "@/app/components/PipelineWidgets";
 import { loadDemoSet } from "@/app/lib/io/loadImages";
 import { prepareUploadFile, type ImageMeta } from "@/app/lib/io/prepareUpload";
@@ -261,16 +262,34 @@ function HomePageInner() {
     [rawImages],
   );
 
+  const focusFirstUpload = () => {
+    const workspace = document.getElementById("workspace");
+    workspace?.scrollIntoView({ behavior: "smooth", block: "start" });
+    window.setTimeout(() => {
+      const slot = document.querySelector<HTMLElement>("[data-drop-slot]");
+      slot?.focus();
+    }, 350);
+  };
+
   return (
     <>
-      <CinematicHero />
-      <div id="workspace" className="workspace-anchor mx-auto w-[min(1200px,92vw)]">
-        <div className="page-shell space-y-6">
+      <MissionHero
+        onStartDemo={() => {
+          void loadDemo("demo_ch2_lro_01");
+          document.getElementById("workspace")?.scrollIntoView({ behavior: "smooth", block: "start" });
+        }}
+        onFocusUpload={focusFirstUpload}
+        loadingDemo={loadingDemo}
+        working={working}
+      />
+      <div id="workspace" className="workspace-anchor mx-auto w-[min(1200px,94vw)] pb-10">
+        <div className="page-shell space-y-8">
+      <SectionLabel number="01" label="INPUT IMAGERY" />
       <section className="panel p-6">
-        <div className="kicker">Mission</div>
-        <h1 className="mt-2 max-w-3xl text-4xl font-medium tracking-tight text-[var(--text-primary)]">
+        <div className="kicker">Mission controls</div>
+        <h2 className="mt-2 max-w-3xl text-3xl font-medium tracking-tight text-[var(--text-primary)]">
           Align multi-modal lunar images for Chandrayaan-2 × LRO analysis
-        </h1>
+        </h2>
         <p className="muted mt-3 max-w-3xl text-sm leading-7">
           Upload three products or load a demo, then run CLAHE → matching → RANSAC → optional sub-pixel refinement → warp → metrics/export.
         </p>
@@ -331,11 +350,13 @@ function HomePageInner() {
       ) : null}
 
       <section data-walkthrough="sensor-panel" className={`space-y-3 ${highlightClass(currentTarget === "sensor-panel")}`}>
-        <div className="kicker !text-[#9aa6c2]">Sensor info</div>
+        <SectionLabel number="01b" label="SENSOR CONTEXT" />
         <div className="grid gap-4 md:grid-cols-3">{sensorPanel}</div>
       </section>
 
-      <section className="grid gap-4 md:grid-cols-3">
+      <section className="space-y-3">
+        <SectionLabel number="01c" label="IMAGE SLOTS" />
+        <div className="grid gap-4 md:grid-cols-3">
         {SLOTS.map((slot) => {
           const image = rawImages[slot.key] ?? null;
           return (
@@ -343,6 +364,7 @@ function HomePageInner() {
               key={slot.key}
               label={slot.title}
               hint={slot.hint}
+              slotLetter={slot.key}
               image={image}
               sensorInfo={image?.sensorInfo}
               disabled={loadingDemo || working}
@@ -351,11 +373,13 @@ function HomePageInner() {
             />
           );
         })}
+        </div>
       </section>
 
+      <SectionLabel number="02" label="PREPROCESSING" />
       <section className="grid gap-4 md:grid-cols-2">
         <article data-walkthrough="stage-preprocess" className={`panel p-4 ${highlightClass(currentTarget === "stage-preprocess")}`}>
-          <div className="kicker">1 · Preprocess</div>
+          <div className="kicker">CLAHE</div>
           <p className="muted mt-3 text-sm leading-6">
             CLAHE boosts local contrast in shadowed lunar terrain before correspondence finding.
           </p>
@@ -378,7 +402,7 @@ function HomePageInner() {
         </article>
 
         <article data-walkthrough="stage-match" className={`panel p-4 ${highlightClass(currentTarget === "stage-match" || currentTarget === "stage-ransac")}`}>
-          <div className="kicker">2 · Match + RANSAC + Warp</div>
+          <div className="kicker">03 · Correspondence + registration</div>
           <p className="muted mt-3 text-sm leading-6">
             LoFTR-style matching, RANSAC homography, optional sub-pixel refinement, then warp/overlay for every pair.
           </p>
@@ -395,19 +419,20 @@ function HomePageInner() {
 
       {pairs && active ? (
         <section data-walkthrough="stage-results" className={`space-y-4 ${highlightClass(currentTarget === "stage-results" || currentTarget === "metrics-panel" || currentTarget === "exports-panel")}`}>
+          <SectionLabel number="04" label="VALIDATION" />
           {active.metrics.quality === "Unreliable" ? (
-            <div className="alert-danger p-4 text-sm">
+            <div className="alert-danger p-4 text-sm" role="alert">
               Registration quality: Unreliable – results may be incorrect. Try another pair, adjust inputs, or treat exports as experimental.
             </div>
           ) : null}
 
-          <div className="flex flex-wrap gap-2">
+          <div className="tabs-scroll">
             {PAIR_DEFS.map((pair) => (
               <button
                 key={pair.id}
                 type="button"
                 onClick={() => setSelectedPair(pair.id)}
-                className={`btn-ghost ${
+                className={`btn-ghost shrink-0 ${
                   selectedPair === pair.id ? "nav-link-active border-[var(--accent-primary)] text-[var(--text-primary)]" : ""
                 }`}
               >
@@ -416,7 +441,7 @@ function HomePageInner() {
             ))}
           </div>
 
-          <div className="panel flex flex-wrap gap-2 p-2">
+          <div className="panel tabs-scroll p-2">
             {[
               { id: "pipeline" as const, label: "Results", target: "metrics-panel" },
               { id: "coverage" as const, label: "Coverage", target: "metrics-panel" },
@@ -431,7 +456,7 @@ function HomePageInner() {
                   setActiveTab(tab.id);
                   if (tab.id === "baseline" && !baseline.classical) runBaseline();
                 }}
-                className={`nav-link ${
+                className={`nav-link shrink-0 ${
                   activeTab === tab.id ? "nav-link-active" : ""
                 } ${highlightClass(currentTarget === tab.target)}`}
               >
@@ -445,7 +470,7 @@ function HomePageInner() {
               <div className="grid gap-4 md:grid-cols-4">
                 <div className="panel p-4">
                   <div className="kicker !text-[9px] opacity-70">RMSE</div>
-                  <div className="mt-2 text-2xl text-[var(--accent-primary)]">{active.metrics.rmse.toFixed(2)} px</div>
+                  <div className="mt-2 text-2xl text-[var(--text-primary)]">{active.metrics.rmse.toFixed(2)} px</div>
                   {active.metrics.refinedRmse != null ? (
                     <div className="muted mt-1 text-xs">
                       Refined RMSE: {active.metrics.refinedRmse.toFixed(2)} px
@@ -471,6 +496,9 @@ function HomePageInner() {
                   <div className="mt-3"><QualityBadge quality={active.metrics.quality} /></div>
                 </div>
               </div>
+              <p className="muted text-xs leading-5">
+                RMSE is pixel reprojection error on inlier matches, not independent lunar geodetic accuracy.
+              </p>
 
               <MatchCanvas
                 leftUrl={processed![active.left].previewUrl}
@@ -493,8 +521,10 @@ function HomePageInner() {
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={active.overlayPreviewUrl} alt="Overlay" className="canvas-frame h-40 w-full object-contain grayscale" />
                   </div>
+                  <p className="muted mt-2 text-[11px]">Warped source (left) · 50/50 overlay proof (right)</p>
                 </div>
                 <div data-walkthrough="exports-panel" className="panel p-4">
+                  <SectionLabel number="05" label="EXPORTS" className="!mb-3" />
                   <div className="kicker">Homography + exports</div>
                   <div className="mt-3 grid grid-cols-3 gap-1 mono text-[10px] text-[var(--text-muted)]">
                     {active.ransac.H?.flat().map((v, i) => (

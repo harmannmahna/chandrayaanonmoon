@@ -1,3 +1,10 @@
 export function SpaceBackdrop() {
-  return <div className="space-backdrop" aria-hidden="true" />;
+  return (
+    <div aria-hidden="true" className="space-backdrop">
+      <div className="space-nebula" />
+      <div className="space-stars space-stars--drift" />
+      <div className="space-stars-fine" />
+      <div className="space-vignette" />
+    </div>
+  );
 }

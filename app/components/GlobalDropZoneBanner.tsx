@@ -83,16 +83,10 @@ export function GlobalDropZoneBanner({ disabled = false, onFilesDropped }: Props
         const files = filesFromDataTransfer(event.dataTransfer);
         if (files.length) onFilesDropped(files);
       }}
-      className={`panel px-4 py-3 text-sm transition-colors ${
-        active
-          ? "border-[var(--accent-primary)] bg-[color-mix(in_srgb,var(--accent-primary)_10%,transparent)] text-[var(--text-primary)]"
-          : "!border-dashed muted"
-      } ${disabled ? "opacity-50" : ""}`}
+      className={`drop-slot px-4 py-3 text-sm ${active ? "is-drag" : ""} ${disabled ? "opacity-50" : ""}`}
     >
-      <span className="kicker">
-        {active ? "Release to load" : "Drop zone"}
-      </span>
-      <p className="mt-1">
+      <span className="kicker">{active ? "Release to upload" : "Drop zone"}</span>
+      <p className="mt-1 text-[var(--text-primary)]">
         {active
           ? "Drop to fill empty slots A / B / C, or drop onto a specific slot."
           : "Drag images here to fill empty slots A / B / C"}

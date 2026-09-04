@@ -46,6 +46,7 @@ export function MatchCanvas({
   const inlierKeys = new Set((inliers || []).map((m) => `${m.x1}:${m.y1}:${m.x2}:${m.y2}`));
   const draw = refined?.length ? refined : matches || [];
   return (
+    <>
     <div className="canvas-frame relative grid h-[360px] grid-cols-2 gap-8 overflow-hidden">
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img src={leftUrl} alt={leftLabel} className="h-full w-full object-cover opacity-80 grayscale" />
@@ -64,7 +65,11 @@ export function MatchCanvas({
           const y1 = (ry1 / lh) * 420;
           const x2 = 520 + (rx2 / rw) * 480;
           const y2 = (ry2 / rh) * 420;
-          const stroke = refinedPoint ? "rgba(126,231,255,0.85)" : isInlier ? "rgba(74,222,128,0.6)" : "rgba(251,113,133,0.4)";
+          const stroke = refinedPoint
+            ? "rgba(88,224,208,0.9)"
+            : isInlier
+              ? "rgba(88,224,208,0.65)"
+              : "rgba(251,146,60,0.45)";
           return (
             <g key={index}>
               <line x1={x1} y1={y1} x2={x2} y2={y2} stroke={stroke} strokeWidth="0.8" />
@@ -81,6 +86,10 @@ export function MatchCanvas({
         {rightLabel}
       </span>
     </div>
+    <p className="muted mt-2 text-[11px]">
+      Match lines · teal = accepted / refined inliers · orange = rejected
+    </p>
+    </>
   );
 }
 

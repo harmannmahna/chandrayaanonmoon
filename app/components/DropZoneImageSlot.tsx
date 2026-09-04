@@ -16,6 +16,7 @@ export type { ImageMeta, ImageWithMeta };
 type Props = {
   label: string;
   hint?: string;
+  slotLetter?: string;
   image: ImageWithMeta | null;
   sensorInfo?: SensorInfo;
   onImageLoaded: (file: File, imageData: ImageData, meta: ImageMeta) => void;
@@ -30,6 +31,7 @@ function hasFilePayload(event: ReactDragEvent): boolean {
 export function DropZoneImageSlot({
   label,
   hint,
+  slotLetter,
   image,
   sensorInfo,
   onImageLoaded,
@@ -41,6 +43,7 @@ export function DropZoneImageSlot({
   const [dragOver, setDragOver] = useState(false);
   const [busy, setBusy] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+  const letter = slotLetter ?? label.match(/\b([ABC])\b/)?.[1] ?? "·";
 
   const openPicker = () => {
     if (disabled || busy) return;
@@ -102,20 +105,23 @@ export function DropZoneImageSlot({
         const file = filesFromDataTransfer(event.dataTransfer)[0];
         void handleFile(file);
       }}
-      className={`panel cursor-pointer p-4 outline-none transition-colors focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] ${
-        dragOver
-          ? "border-[var(--accent-primary)] bg-[color-mix(in_srgb,var(--accent-primary)_10%,transparent)]"
-          : image
-            ? ""
-            : "!border-dashed"
+      className={`drop-slot outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-primary)] ${
+        dragOver ? "is-drag" : image ? "is-loaded" : ""
       } ${disabled ? "cursor-not-allowed opacity-50" : ""}`}
     >
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <div className="kicker">{label}</div>
-          {hint || sensorInfo?.notes ? (
-            <div className="muted mt-2 text-sm">{sensorInfo?.notes || hint}</div>
-          ) : null}
+        <div className="min-w-0">
+          <div className="flex items-center gap-3">
+            <span className="drop-slot__letter" aria-hidden="true">
+              {letter}
+            </span>
+            <div>
+              <div className="kicker">{label}</div>
+              {hint || sensorInfo?.notes ? (
+                <div className="muted mt-1 text-sm">{sensorInfo?.notes || hint}</div>
+              ) : null}
+            </div>
+          </div>
         </div>
         {image ? (
           <button
@@ -127,27 +133,24 @@ export function DropZoneImageSlot({
               onClear();
             }}
             disabled={disabled || busy}
-            className="btn-ghost shrink-0 !px-2 !py-1 hover:border-[var(--accent-primary)] hover:text-[var(--text-primary)] disabled:opacity-40"
+            className="btn-ghost shrink-0 !min-h-8 !px-2 !py-1"
           >
             Clear
           </button>
         ) : null}
       </div>
 
-      <div
-        className={`canvas-frame mt-4 flex h-40 items-center justify-center overflow-hidden ${
-          dragOver ? "border-[var(--accent-primary)]" : ""
-        }`}
-      >
+      <div className={`drop-slot__preview ${dragOver ? "border-[var(--accent-primary)]" : ""}`}>
         {image ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={image.previewUrl} alt={`${label} preview`} className="h-full w-full object-cover grayscale" />
         ) : (
           <div className="px-4 text-center">
-            <div className="text-xs text-[var(--text-primary)]">
-              {busy ? "Reading file…" : dragOver ? "Drop to load this slot" : "Click to upload or drag & drop"}
+            <div className="text-sm text-[var(--text-primary)]">
+              {busy ? "Reading file…" : dragOver ? "Release to upload" : "Drop image here"}
             </div>
             <div className="muted mt-2 text-[10px] leading-5">{SUPPORTED_FORMATS_LABEL}</div>
+            <span className="btn-secondary mt-3 !min-h-8 pointer-events-none inline-flex">Browse files</span>
           </div>
         )}
       </div>
@@ -170,6 +173,7 @@ export function DropZoneImageSlot({
           {image.originalWidth && image.originalHeight
             ? ` · ${image.originalWidth}×${image.originalHeight}`
             : ""}
+          {sensorInfo?.label ? ` · ${sensorInfo.label}` : ""}
         </div>
       ) : null}
 
