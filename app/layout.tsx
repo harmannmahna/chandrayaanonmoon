@@ -16,9 +16,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <div className="app-frame">
           <SpaceBackdrop />
           <SiteHeader />
-          <main className="mx-auto w-[min(1200px,92vw)] pb-16 pt-8">
-            <div className="page-shell">{children}</div>
-          </main>
+          <main className="pb-16 pt-2">{children}</main>
           <footer className="site-footer mx-auto flex w-[min(1200px,92vw)] items-center justify-between py-4 text-[10px] uppercase tracking-[0.12em] mono">
             <span>LUNA/REGISTER · Prototype</span>
             <span>Not an official ISRO product</span>

@@ -6,6 +6,7 @@ import { JudgeWalkthrough, JUDGE_STEPS } from "@/app/components/JudgeWalkthrough
 import { SensorCard } from "@/app/components/SensorCard";
 import { DropZoneImageSlot } from "@/app/components/DropZoneImageSlot";
 import { GlobalDropZoneBanner } from "@/app/components/GlobalDropZoneBanner";
+import { CinematicHero } from "@/app/components/CinematicHero";
 import { CoveragePanel, MatchCanvas, QualityBadge } from "@/app/components/PipelineWidgets";
 import { loadDemoSet } from "@/app/lib/io/loadImages";
 import { prepareUploadFile, type ImageMeta } from "@/app/lib/io/prepareUpload";
@@ -261,7 +262,10 @@ function HomePageInner() {
   );
 
   return (
-    <div className="space-y-6">
+    <>
+      <CinematicHero />
+      <div id="workspace" className="workspace-anchor mx-auto w-[min(1200px,92vw)]">
+        <div className="page-shell space-y-6">
       <section className="panel p-6">
         <div className="kicker">Mission</div>
         <h1 className="mt-2 max-w-3xl text-4xl font-medium tracking-tight text-[var(--text-primary)]">
@@ -637,7 +641,9 @@ function HomePageInner() {
         }}
         onJump={(index) => setWalkthrough(true, index)}
       />
-    </div>
+        </div>
+      </div>
+    </>
   );
 }
 

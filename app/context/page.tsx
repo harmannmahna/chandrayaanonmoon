@@ -13,7 +13,8 @@ const PRODUCTS = [
 
 export default function ContextPage() {
   return (
-    <div className="space-y-8">
+    <div className="mx-auto w-[min(1200px,92vw)] pt-6">
+    <div className="page-shell space-y-8">
       <section className="panel p-6">
         <div className="kicker">One-line pitch</div>
         <p className="mt-3 max-w-4xl text-lg leading-8 text-[var(--text-primary)]">
@@ -116,6 +117,7 @@ export default function ContextPage() {
       </section>
 
       <PerformancePanel />
+    </div>
     </div>
   );
 }

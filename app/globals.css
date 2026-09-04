@@ -96,10 +96,11 @@ select {
   z-index: 0;
   pointer-events: none;
   background:
-    radial-gradient(ellipse 70% 45% at 12% -8%, rgba(124, 90, 220, 0.28), transparent 52%),
-    radial-gradient(ellipse 55% 40% at 92% 6%, rgba(34, 160, 190, 0.22), transparent 48%),
-    radial-gradient(ellipse 60% 35% at 50% 112%, rgba(90, 40, 130, 0.2), transparent 50%),
-    var(--bg-primary);
+    radial-gradient(ellipse 80% 55% at 50% -10%, rgba(255, 255, 255, 0.07), transparent 55%),
+    radial-gradient(ellipse 70% 45% at 12% -8%, rgba(124, 90, 220, 0.22), transparent 52%),
+    radial-gradient(ellipse 55% 40% at 92% 6%, rgba(34, 160, 190, 0.16), transparent 48%),
+    radial-gradient(ellipse 60% 35% at 50% 112%, rgba(90, 40, 130, 0.18), transparent 50%),
+    #02040a;
 }
 
 .space-backdrop::before,
@@ -110,15 +111,15 @@ select {
 }
 
 .space-backdrop::before {
-  opacity: 0.55;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180' viewBox='0 0 180 180'%3E%3Ccircle cx='12' cy='22' r='0.7' fill='white' opacity='0.85'/%3E%3Ccircle cx='48' cy='70' r='0.5' fill='white' opacity='0.55'/%3E%3Ccircle cx='96' cy='18' r='0.6' fill='white' opacity='0.7'/%3E%3Ccircle cx='140' cy='54' r='0.45' fill='white' opacity='0.45'/%3E%3Ccircle cx='168' cy='110' r='0.7' fill='white' opacity='0.8'/%3E%3Ccircle cx='30' cy='132' r='0.5' fill='white' opacity='0.5'/%3E%3Ccircle cx='78' cy='150' r='0.4' fill='white' opacity='0.4'/%3E%3Ccircle cx='118' cy='98' r='0.55' fill='white' opacity='0.65'/%3E%3C/svg%3E");
-  background-size: 180px 180px;
+  opacity: 0.75;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Ccircle cx='8' cy='18' r='0.7' fill='white' opacity='0.9'/%3E%3Ccircle cx='36' cy='54' r='0.45' fill='white' opacity='0.55'/%3E%3Ccircle cx='72' cy='12' r='0.6' fill='white' opacity='0.75'/%3E%3Ccircle cx='118' cy='40' r='0.4' fill='white' opacity='0.45'/%3E%3Ccircle cx='148' cy='88' r='0.7' fill='white' opacity='0.85'/%3E%3Ccircle cx='24' cy='110' r='0.5' fill='white' opacity='0.5'/%3E%3Ccircle cx='64' cy='132' r='0.35' fill='white' opacity='0.4'/%3E%3Ccircle cx='98' cy='78' r='0.55' fill='white' opacity='0.7'/%3E%3Ccircle cx='132' cy='140' r='0.45' fill='white' opacity='0.6'/%3E%3Ccircle cx='50' cy='90' r='0.3' fill='white' opacity='0.35'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
 }
 
 .space-backdrop::after {
-  opacity: 0.28;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='280' height='280' viewBox='0 0 280 280'%3E%3Ccircle cx='40' cy='200' r='1.1' fill='%237ee7ff' opacity='0.9'/%3E%3Ccircle cx='210' cy='40' r='1' fill='%23c084fc' opacity='0.8'/%3E%3Ccircle cx='160' cy='170' r='0.8' fill='white' opacity='0.9'/%3E%3C/svg%3E");
-  background-size: 280px 280px;
+  opacity: 0.35;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='260' height='260' viewBox='0 0 260 260'%3E%3Ccircle cx='40' cy='200' r='1.2' fill='%237ee7ff' opacity='0.95'/%3E%3Ccircle cx='210' cy='40' r='1' fill='%23c084fc' opacity='0.85'/%3E%3Ccircle cx='160' cy='170' r='0.9' fill='white' opacity='0.95'/%3E%3Ccircle cx='90' cy='70' r='0.7' fill='white' opacity='0.8'/%3E%3C/svg%3E");
+  background-size: 260px 260px;
   animation: star-twinkle 12s linear infinite;
 }
 
@@ -363,4 +364,204 @@ select {
 
 .walkthrough-ring {
   box-shadow: 0 0 0 2px var(--accent-primary), 0 0 0 6px color-mix(in srgb, var(--bg-primary) 90%, black);
+}
+
+/* ---- Cinematic moon hero (inspired by space landings; original assets) ---- */
+.cinematic-moon {
+  position: relative;
+  width: min(72vw, 560px);
+  aspect-ratio: 1;
+  filter: drop-shadow(0 30px 60px rgba(0, 0, 0, 0.55));
+}
+
+.cinematic-moon__glow {
+  position: absolute;
+  inset: -18%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 248, 230, 0.28), transparent 62%);
+  pointer-events: none;
+}
+
+.cinematic-moon__disc {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 50%;
+}
+
+.cinematic-hero {
+  position: relative;
+  height: 260vh;
+  margin: 0 auto;
+}
+
+.cinematic-hero__sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+}
+
+.cinematic-hero__moon-stage {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  display: grid;
+  place-items: center;
+}
+
+.cinematic-hero__moon-track {
+  will-change: transform;
+  transition: none;
+}
+
+.cinematic-hero__content {
+  position: relative;
+  z-index: 2;
+  width: min(920px, 92vw);
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1rem;
+}
+
+.cinematic-hero__card {
+  max-width: 34rem;
+  padding: 1.25rem 1.35rem;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(2, 5, 14, 0.42);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
+  animation: cinematic-card-in 420ms ease both;
+}
+
+.cinematic-hero__title {
+  margin: 0.7rem 0 0;
+  font-size: clamp(2.2rem, 6vw, 4.4rem);
+  line-height: 0.95;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  font-weight: 800;
+  white-space: pre-line;
+  color: #fff;
+  text-shadow: 0 8px 40px rgba(0, 0, 0, 0.45);
+}
+
+.cinematic-hero__body {
+  margin: 0.9rem 0 0;
+  max-width: 34ch;
+  font-size: 0.98rem;
+  line-height: 1.65;
+  color: rgba(236, 242, 255, 0.82);
+}
+
+.cinematic-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  margin-top: 1.15rem;
+}
+
+.cinematic-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 8.5rem;
+  padding: 0.78rem 1.15rem;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-family: ui-monospace, "Cascadia Code", "SF Mono", Menlo, monospace;
+  transition: transform 0.15s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.cinematic-btn--solid {
+  background: #fff;
+  color: #05070f;
+  border: 1px solid #fff;
+}
+
+.cinematic-btn--ghost {
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+}
+
+.cinematic-btn:hover {
+  transform: translateY(-1px);
+}
+
+.cinematic-hero__progress {
+  display: flex;
+  gap: 0.45rem;
+}
+
+.cinematic-hero__dot {
+  width: 1.6rem;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.cinematic-hero__dot.is-active {
+  background: #fff;
+}
+
+.cinematic-hero__hint {
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@keyframes cinematic-card-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .cinematic-hero {
+    height: 220vh;
+  }
+
+  .cinematic-moon {
+    width: min(88vw, 420px);
+  }
+
+  .cinematic-hero__card {
+    max-width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cinematic-hero {
+    height: auto;
+  }
+
+  .cinematic-hero__sticky {
+    position: relative;
+    height: auto;
+    min-height: 70vh;
+    padding: 2rem 0 1rem;
+  }
+
+  .cinematic-hero__moon-track {
+    transform: translate3d(18vw, 0, 0) scale(0.85) !important;
+    opacity: 0.55;
+  }
+
+  .cinematic-hero__card {
+    animation: none;
+  }
+}
+
+.workspace-anchor {
+  scroll-margin-top: 5.5rem;
 }
