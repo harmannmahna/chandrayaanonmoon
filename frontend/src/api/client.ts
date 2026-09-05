@@ -52,8 +52,6 @@ export type LoftrResponse = {
   weak_regions: WeakRegion[];
   preview_url: string;
   matcher: string;
-  reference_index?: number;
-  source_index?: number;
 };
 
 export type RansacResponse = {

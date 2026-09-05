@@ -1,0 +1,11 @@
+{
+  "name": "lunamatch",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:backend": "cd backend && . .venv/bin/activate && uvicorn main:app --reload --host 127.0.0.1 --port 8000",
+    "build": "npm --prefix frontend run build",
+    "lint": "npm --prefix frontend run build"
+  }
+}
