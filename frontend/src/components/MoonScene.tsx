@@ -21,7 +21,7 @@ function MoonSphere() {
 
   useFrame((_, delta) => {
     if (!mesh.current) return;
-    // Smooth axial spin; keep delta-clamped so tab-switches don't jump
+    // Smooth axial spin; clamp delta so tab-switches don't jump
     const step = Math.min(delta, 0.05);
     mesh.current.rotation.y += step * 0.065;
   });
@@ -31,11 +31,11 @@ function MoonSphere() {
       <sphereGeometry args={[1, 128, 128]} />
       <meshStandardMaterial
         map={texture}
-        roughness={0.88}
+        roughness={0.9}
         metalness={0}
-        // Soft earthshine — night side stays visible, never pure black
-        emissive={new THREE.Color("#7a7a7a")}
-        emissiveIntensity={0.18}
+        // Earthshine — far side stays textured, never pure black
+        emissive={new THREE.Color("#a0a0a0")}
+        emissiveIntensity={0.35}
         emissiveMap={texture}
       />
     </mesh>
@@ -55,20 +55,17 @@ export function MoonScene({ className = "" }: { className?: string }) {
       >
         <color attach="background" args={[dark ? "#02040a" : "#b9d9f7"]} />
 
-        {/* Balanced lighting: sun + earthshine fill so the far side stays readable */}
-        <ambientLight intensity={dark ? 0.75 : 0.9} />
+        {/* Sun + earthshine fill so every longitude stays readable while orbiting */}
+        <ambientLight intensity={dark ? 0.85 : 0.95} />
         <hemisphereLight
-          color={dark ? "#e8eeff" : "#ffffff"}
-          groundColor={dark ? "#2a2430" : "#b8c4d8"}
-          intensity={dark ? 0.85 : 0.6}
+          color={dark ? "#eef2ff" : "#ffffff"}
+          groundColor={dark ? "#3a3440" : "#b8c4d8"}
+          intensity={dark ? 0.9 : 0.65}
         />
-        <directionalLight
-          position={[5, 2.4, 3.2]}
-          intensity={dark ? 1.35 : 1.1}
-          color="#fff6e8"
-        />
-        <directionalLight position={[-5, 0.8, -2]} intensity={dark ? 0.7 : 0.45} color="#b8c8ff" />
-        <directionalLight position={[0, 0, 6]} intensity={dark ? 0.35 : 0.25} color="#ffffff" />
+        <directionalLight position={[5, 2.4, 3.2]} intensity={dark ? 1.25 : 1.05} color="#fff6e8" />
+        <directionalLight position={[-5, 1, -2]} intensity={dark ? 0.85 : 0.55} color="#c4d0ff" />
+        <directionalLight position={[0, 0, 6]} intensity={dark ? 0.4 : 0.28} color="#ffffff" />
+        <pointLight position={[-3, 2, 4]} intensity={dark ? 0.35 : 0.2} color="#ffffff" distance={20} />
 
         {dark ? (
           <Stars radius={80} depth={40} count={1400} factor={3} saturation={0} fade speed={0.25} />
