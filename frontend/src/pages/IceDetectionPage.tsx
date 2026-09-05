@@ -3,14 +3,16 @@ import { Link } from "react-router-dom";
 import { GlassCard } from "../components/GlassCard";
 import { RocketLoader } from "../components/RocketLoader";
 import { runIce, type IceResponse } from "../api/client";
+import { useAppStore } from "../store/appStore";
 
 const ICE_TIPS = [
   "Bonus tip: CPR > 1 alone is not enough — rocky clutter can raise circular polarization.",
   "Bonus tip: DOP < 0.13 gates out depolarized returns from rough surfaces, leaving ice-like candidates.",
-  "Bonus tip: Registration is the enabler: DFSAR and OHRC must share a pixel grid before overlays matter.",
+  "Bonus tip: If you already registered images, this screen reuses that lunar patch for ice highlighting.",
 ];
 
 export function IceDetectionPage() {
+  const lastRegistrationJobId = useAppStore((s) => s.lastRegistrationJobId);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<IceResponse | null>(null);
@@ -19,7 +21,7 @@ export function IceDetectionPage() {
     setBusy(true);
     setError(null);
     try {
-      setResult(await runIce());
+      setResult(await runIce(lastRegistrationJobId ?? undefined));
     } catch (e) {
       setError(e instanceof Error ? e.message : "Ice detection failed");
     } finally {
@@ -33,10 +35,15 @@ export function IceDetectionPage() {
         <p className="kicker">Option B · Downstream PS</p>
         <h1 className="text-3xl font-semibold">Subsurface Ice Detection</h1>
         <p className="max-w-3xl text-sm leading-7 text-[var(--muted)]">
-          Registration is the enabler for ice prospecting: DFSAR radar and OHRC optical must be
-          pixel-aligned before CPR / DOP overlays can be trusted. Candidates require{" "}
+          After you upload/register lunar images, those same frames are reused here to mark likely
+          ice-bearing spots in that area. Candidates need{" "}
           <strong className="text-[var(--text)]">CPR &gt; 1</strong> and{" "}
           <strong className="text-[var(--text)]">DOP &lt; 0.13</strong>.
+        </p>
+        <p className="rounded-xl border border-dashed border-[var(--border)] px-3 py-2 text-xs text-[var(--muted)]">
+          {lastRegistrationJobId
+            ? `Using your last registration job (${lastRegistrationJobId}) as the optical base.`
+            : "No registration job found yet — run Register first (upload or demo), then screen ice on that area. Demo terrain is used until then."}
         </p>
         <div className="flex flex-wrap gap-3 pt-1">
           <button type="button" className="btn btn-primary" disabled={busy} onClick={() => void run()}>
@@ -54,12 +61,21 @@ export function IceDetectionPage() {
         </div>
       ) : null}
 
-      {busy ? <RocketLoader title="Screening permanently shadowed regions…" tips={ICE_TIPS} /> : null}
+      {busy ? <RocketLoader title="Screening ice in this lunar area…" tips={ICE_TIPS} /> : null}
 
       {!busy && result ? (
         <div className="space-y-4">
           <GlassCard className="space-y-4">
             <p className="kicker">Criteria · {result.criteria}</p>
+            {result.used_registration_job ? (
+              <p className="text-xs text-[var(--accent)]">
+                Ice overlays are drawn on your registered scene ({result.source_image}).
+              </p>
+            ) : (
+              <p className="text-xs text-[var(--muted)]">
+                Showing demo terrain — register images first to screen your own patch.
+              </p>
+            )}
             <div className="grid gap-4 md:grid-cols-2">
               <figure>
                 <img
@@ -67,7 +83,9 @@ export function IceDetectionPage() {
                   alt="Optical context"
                   className="w-full rounded-2xl border border-[var(--border)]"
                 />
-                <figcaption className="mt-2 text-xs text-[var(--muted)]">Optical context</figcaption>
+                <figcaption className="mt-2 text-xs text-[var(--muted)]">
+                  Optical context (registered area when available)
+                </figcaption>
               </figure>
               <figure>
                 <img
@@ -76,7 +94,7 @@ export function IceDetectionPage() {
                   className="w-full rounded-2xl border border-[var(--border)]"
                 />
                 <figcaption className="mt-2 text-xs text-[var(--muted)]">
-                  Overlay · cyan = CPR-only · lime = CPR+DOP candidates
+                  Overlay · cyan/orange = CPR-only · lime = CPR+DOP ice-like zones
                 </figcaption>
               </figure>
             </div>
@@ -93,13 +111,13 @@ export function IceDetectionPage() {
               </div>
               <div className="rounded-2xl border border-[var(--border)] bg-black/20 p-4">
                 <p className="kicker">Landing path</p>
-                <p className="mt-2 text-sm leading-6 text-[var(--muted)]">in progress</p>
+                <p className="mt-2 text-sm leading-6 text-[var(--muted)]">{result.landing_path_status}</p>
               </div>
             </div>
           </GlassCard>
 
           <GlassCard className="space-y-3">
-            <p className="kicker">Detected regions</p>
+            <p className="kicker">Detected ice-related regions in this area</p>
             {result.regions.map((r) => (
               <div key={r.name} className="rounded-2xl border border-[var(--border)] p-4 text-sm leading-6">
                 <div className="flex flex-wrap items-center justify-between gap-2">

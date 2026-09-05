@@ -88,6 +88,8 @@ export type IceResponse = {
   terrain_note: string;
   relevance: string;
   landing_path_status: string;
+  source_image?: string;
+  used_registration_job?: boolean;
 };
 
 export async function loadDemo() {

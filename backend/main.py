@@ -69,24 +69,44 @@ def _draw_matches(ref: np.ndarray, src: np.ndarray, match: dict[str, Any]) -> np
     return canvas
 
 
-def _ensure_samples() -> list[Path]:
-    existing = sorted(SAMPLE_DIR.glob("demo_*.png"))
-    if len(existing) >= 2:
-        return existing
-    rng = np.random.default_rng(42)
-    base = np.zeros((512, 512), dtype=np.uint8)
-    for _ in range(40):
-        center = (int(rng.integers(40, 470)), int(rng.integers(40, 470)))
-        radius = int(rng.integers(8, 55))
-        cv2.circle(base, center, radius, int(rng.integers(40, 200)), -1)
-        cv2.circle(base, center, radius, int(rng.integers(180, 255)), 2)
-    base = np.clip(base.astype(np.float32) + rng.normal(0, 8, base.shape), 0, 255).astype(np.uint8)
-    H = np.array([[1.08, -0.04, 28.0], [0.035, 0.97, -12.0], [0.0, 0.0, 1.0]], dtype=np.float64)
-    warped = cv2.warpPerspective(base, H, (512, 512), borderMode=cv2.BORDER_REFLECT)
-    warped = np.clip(warped.astype(np.float32) * 0.85 + 18, 0, 255).astype(np.uint8)
-    H2 = np.array([[0.95, 0.05, -18.0], [-0.02, 1.05, 22.0], [0.0, 0.0, 1.0]], dtype=np.float64)
-    warped2 = cv2.warpPerspective(base, H2, (512, 512), borderMode=cv2.BORDER_REFLECT)
+def _synth_lunar(seed: int, shade: float = 1.0, bias: float = 0.0) -> np.ndarray:
+    """Synthetic crater field with soft illumination so CLAHE has room to work."""
+    rng = np.random.default_rng(seed)
+    yy, xx = np.mgrid[0:512, 0:512]
+    # Low-frequency illumination / mare gradients
+    illum = 0.55 + 0.35 * np.sin(xx / 90.0) * np.cos(yy / 110.0) + 0.12 * np.sin((xx + yy) / 140.0)
+    base = (42 + 38 * illum).astype(np.float32)
+    for _ in range(55):
+        cx = int(rng.integers(30, 480))
+        cy = int(rng.integers(30, 480))
+        radius = int(rng.integers(6, 60))
+        floor = float(rng.integers(18, 90))
+        rim = float(rng.integers(140, 230))
+        cv2.circle(base, (cx, cy), radius, floor, -1)
+        cv2.circle(base, (cx, cy), radius, rim, max(1, radius // 14))
+        # Soft bowl shading inside crater
+        mask = (xx - cx) ** 2 + (yy - cy) ** 2 <= radius**2
+        dist = np.sqrt(((xx - cx) ** 2 + (yy - cy) ** 2).astype(np.float32))
+        bowl = np.clip(1.0 - dist / max(radius, 1), 0, 1)
+        base[mask] = base[mask] * (0.65 + 0.35 * bowl[mask]) + floor * 0.15
+    noise = rng.normal(0, 5.5, base.shape).astype(np.float32)
+    out = np.clip(base * shade + bias + noise, 0, 255).astype(np.uint8)
+    return out
+
+
+def _ensure_samples(force: bool = False) -> list[Path]:
     paths = [SAMPLE_DIR / "demo_reference.png", SAMPLE_DIR / "demo_source.png", SAMPLE_DIR / "demo_source_b.png"]
+    if not force and all(p.exists() for p in paths):
+        return paths
+    SAMPLE_DIR.mkdir(parents=True, exist_ok=True)
+    base = _synth_lunar(42, shade=1.0, bias=0.0)
+    H = np.array([[1.08, -0.04, 28.0], [0.035, 0.97, -12.0], [0.0, 0.0, 1.0]], dtype=np.float64)
+    # Dimmer / different sun angle for source A
+    warped = _synth_lunar(42, shade=0.72, bias=12.0)
+    warped = cv2.warpPerspective(warped, H, (512, 512), borderMode=cv2.BORDER_REFLECT)
+    H2 = np.array([[0.95, 0.05, -18.0], [-0.02, 1.05, 22.0], [0.0, 0.0, 1.0]], dtype=np.float64)
+    warped2 = _synth_lunar(42, shade=1.15, bias=-8.0)
+    warped2 = cv2.warpPerspective(warped2, H2, (512, 512), borderMode=cv2.BORDER_REFLECT)
     cv2.imwrite(str(paths[0]), cv2.cvtColor(base, cv2.COLOR_GRAY2BGR))
     cv2.imwrite(str(paths[1]), cv2.cvtColor(warped, cv2.COLOR_GRAY2BGR))
     cv2.imwrite(str(paths[2]), cv2.cvtColor(warped2, cv2.COLOR_GRAY2BGR))

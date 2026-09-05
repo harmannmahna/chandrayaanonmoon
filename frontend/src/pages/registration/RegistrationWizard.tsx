@@ -1,8 +1,10 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState, type DragEvent } from "react";
+import { Info } from "lucide-react";
 import { GlassCard } from "../../components/GlassCard";
 import { RocketLoader } from "../../components/RocketLoader";
 import { BeforeAfterSlider } from "../../components/BeforeAfterSlider";
 import { loadDemo, runClahe, runLoftr, runRansac, uploadImages } from "../../api/client";
+import { useAppStore } from "../../store/appStore";
 
 type Stage = "select" | "clahe" | "loftr" | "ransac" | "done";
 
@@ -19,7 +21,31 @@ const RANSAC_TIPS = [
   "Bonus tip: RMSE here is pixel reprojection error on inliers, not lunar geodetic accuracy.",
 ];
 
+const RMSE_GUIDE = [
+  { rmse: 10, meaning: "Poor alignment" },
+  { rmse: 5, meaning: "Moderate" },
+  { rmse: 2, meaning: "Good" },
+  { rmse: 0.8, meaning: "Very good" },
+  { rmse: 0.1, meaning: "Extremely precise" },
+] as const;
+
+function nearestRmseGuide(rmse: number): number {
+  let best: number = RMSE_GUIDE[0].rmse;
+  for (const row of RMSE_GUIDE) {
+    if (Math.abs(row.rmse - rmse) < Math.abs(best - rmse)) best = row.rmse;
+  }
+  return best;
+}
+
+function isImageFile(file: File | undefined | null): file is File {
+  if (!file) return false;
+  if (file.type.startsWith("image/")) return true;
+  // Some OS drag payloads omit MIME — fall back to extension.
+  return /\.(png|jpe?g|webp|gif|bmp|tif{1,2})$/i.test(file.name);
+}
+
 export function RegistrationWizard() {
+  const setLastRegistrationJobId = useAppStore((s) => s.setLastRegistrationJobId);
   const [count, setCount] = useState(2);
   const [files, setFiles] = useState<(File | null)[]>([null, null]);
   const [previews, setPreviews] = useState<(string | null)[]>([null, null]);
@@ -31,6 +57,8 @@ export function RegistrationWizard() {
   const [loftr, setLoftr] = useState<Awaited<ReturnType<typeof runLoftr>> | null>(null);
   const [ransac, setRansac] = useState<Awaited<ReturnType<typeof runRansac>> | null>(null);
   const [showHInfo, setShowHInfo] = useState(false);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const dragDepth = useRef<Record<number, number>>({});
 
   const ready = useMemo(() => files.every(Boolean), [files]);
 
@@ -41,12 +69,55 @@ export function RegistrationWizard() {
   };
 
   const onFile = (index: number, file: File | null) => {
-    const nextFiles = [...files];
-    const nextPreviews = [...previews];
-    nextFiles[index] = file;
-    nextPreviews[index] = file ? URL.createObjectURL(file) : null;
-    setFiles(nextFiles);
-    setPreviews(nextPreviews);
+    if (file && !isImageFile(file)) {
+      setError("Please drop an image file (PNG, JPG, WEBP, …).");
+      return;
+    }
+    setError(null);
+    setFiles((prev) => {
+      const next = [...prev];
+      next[index] = file;
+      return next;
+    });
+    setPreviews((prev) => {
+      const next = [...prev];
+      if (next[index]) URL.revokeObjectURL(next[index]!);
+      next[index] = file ? URL.createObjectURL(file) : null;
+      return next;
+    });
+  };
+
+  const onDragEnter = (index: number, e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragDepth.current[index] = (dragDepth.current[index] ?? 0) + 1;
+    setDragOverIndex(index);
+  };
+
+  const onDragOver = (e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = "copy";
+  };
+
+  const onDragLeave = (index: number, e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragDepth.current[index] = Math.max(0, (dragDepth.current[index] ?? 0) - 1);
+    if ((dragDepth.current[index] ?? 0) === 0) {
+      setDragOverIndex((cur) => (cur === index ? null : cur));
+    }
+  };
+
+  const onDrop = (index: number, e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragDepth.current[index] = 0;
+    setDragOverIndex(null);
+    const list = e.dataTransfer?.files;
+    if (!list?.length) return;
+    const image = Array.from(list).find((f) => isImageFile(f)) ?? null;
+    onFile(index, image);
   };
 
   const startDemo = async () => {
@@ -55,6 +126,7 @@ export function RegistrationWizard() {
     try {
       const demo = await loadDemo();
       setJobId(demo.job_id);
+      setLastRegistrationJobId(demo.job_id);
       setCount(demo.count);
       setPreviews(demo.preview_urls);
       setFiles(Array.from({ length: demo.count }, () => new File([], "demo.png")));
@@ -76,6 +148,7 @@ export function RegistrationWizard() {
     try {
       const uploaded = await uploadImages(files.filter(Boolean) as File[], 0);
       setJobId(uploaded.job_id);
+      setLastRegistrationJobId(uploaded.job_id);
       setStage("clahe");
       const result = await runClahe(uploaded.job_id);
       setClahe(result);
@@ -145,15 +218,57 @@ export function RegistrationWizard() {
             </div>
           </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {Array.from({ length: count }).map((_, i) => (
-              <label key={i} className="flex min-h-48 cursor-pointer flex-col rounded-2xl border border-dashed border-[var(--border)] bg-black/20 p-4">
-                <span className="kicker">{i === 0 ? "Reference (LRO / SELENE)" : `Source ${i} (Ch-2)`}</span>
-                <div className="mt-3 flex flex-1 items-center justify-center overflow-hidden rounded-xl bg-black/40">
-                  {previews[i] ? <img src={previews[i]!} alt="" className="h-40 w-full object-cover grayscale" /> : <span className="text-sm text-[var(--muted)]">Drop / browse</span>}
+            {Array.from({ length: count }).map((_, i) => {
+              const active = dragOverIndex === i;
+              return (
+                <div
+                  key={i}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      document.getElementById(`slot-file-${i}`)?.click();
+                    }
+                  }}
+                  onClick={() => document.getElementById(`slot-file-${i}`)?.click()}
+                  onDragEnter={(e) => onDragEnter(i, e)}
+                  onDragOver={onDragOver}
+                  onDragLeave={(e) => onDragLeave(i, e)}
+                  onDrop={(e) => onDrop(i, e)}
+                  className={`flex min-h-48 cursor-pointer flex-col rounded-2xl border border-dashed p-4 transition ${
+                    active
+                      ? "border-[var(--accent)] bg-[color-mix(in_srgb,var(--accent)_14%,transparent)] ring-2 ring-[color-mix(in_srgb,var(--accent)_35%,transparent)]"
+                      : "border-[var(--border)] bg-black/20"
+                  }`}
+                >
+                  <span className="kicker">{i === 0 ? "Reference (LRO / SELENE)" : `Source ${i} (Ch-2)`}</span>
+                  <div className="pointer-events-none mt-3 flex flex-1 items-center justify-center overflow-hidden rounded-xl bg-black/40">
+                    {previews[i] ? (
+                      <img src={previews[i]!} alt="" className="h-40 w-full object-cover grayscale" />
+                    ) : (
+                      <span className="px-3 text-center text-sm text-[var(--muted)]">
+                        {active ? "Release to drop image" : "Drag & drop image here, or click to browse"}
+                      </span>
+                    )}
+                  </div>
+                  <input
+                    id={`slot-file-${i}`}
+                    className="sr-only"
+                    type="file"
+                    accept="image/*"
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => {
+                      onFile(i, e.target.files?.[0] ?? null);
+                      e.target.value = "";
+                    }}
+                  />
+                  {files[i] ? (
+                    <p className="mt-3 truncate text-xs text-[var(--muted)]">{files[i]!.name || "Image selected"}</p>
+                  ) : null}
                 </div>
-                <input className="mt-3 text-xs" type="file" accept="image/*" onChange={(e) => onFile(i, e.target.files?.[0] ?? null)} />
-              </label>
-            ))}
+              );
+            })}
           </div>
           <div className="flex flex-wrap gap-3">
             <button type="button" className="btn btn-primary" disabled={!ready || busy} onClick={() => void startUpload()}>Start Processing</button>
@@ -235,9 +350,42 @@ export function RegistrationWizard() {
               </div>
             ) : null}
           </GlassCard>
-          <GlassCard>
+          <GlassCard className="space-y-4">
             <p className="kicker">Stage 4 · Plain-language conclusion</p>
-            <p className="mt-3 text-base leading-8">{ransac.conclusion}</p>
+            <p className="mt-1 text-base leading-8">{ransac.conclusion}</p>
+
+            <div className="overflow-hidden rounded-2xl border border-[var(--border)]">
+              <div className="grid grid-cols-2 border-b border-[var(--border)] bg-black/30 px-4 py-2.5 text-xs uppercase tracking-[0.14em] text-[var(--muted)]">
+                <span>RMSE</span>
+                <span>Meaning</span>
+              </div>
+              {RMSE_GUIDE.map((row) => {
+                const active = nearestRmseGuide(ransac.rmse_px) === row.rmse;
+                return (
+                  <div
+                    key={row.rmse}
+                    className={`grid grid-cols-2 border-b border-[var(--border)] px-4 py-3 text-sm last:border-b-0 ${
+                      active
+                        ? "bg-[color-mix(in_srgb,var(--accent)_12%,transparent)] font-semibold text-[var(--text)]"
+                        : "text-[var(--muted)]"
+                    }`}
+                  >
+                    <span>{row.rmse} px</span>
+                    <span className="flex items-center justify-between gap-2">
+                      <span>{row.meaning}</span>
+                      {active ? (
+                        <span className="rounded-full border border-[color-mix(in_srgb,var(--accent)_45%,transparent)] px-2 py-0.5 text-[10px] uppercase tracking-wider text-[var(--accent)]">
+                          your result · {ransac.rmse_px.toFixed(1)} px
+                        </span>
+                      ) : null}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="text-xs leading-5 text-[var(--muted)]">
+              Guide values are reference levels for reading RMSE. Your measured inlier reprojection error is highlighted.
+            </p>
           </GlassCard>
         </div>
       ) : null}
@@ -252,17 +400,22 @@ function Metric({ label, value, tip, action }: { label: string; value: string; t
       <div className="flex items-center justify-between gap-2">
         <p className="kicker">{label}</p>
         {action ? (
-          <button type="button" className="text-xs text-[var(--accent)]" onClick={action} aria-label={`Info about ${label}`}>
-            (i)
+          <button
+            type="button"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--accent)_45%,transparent)] text-[var(--accent)] transition hover:bg-[color-mix(in_srgb,var(--accent)_14%,transparent)]"
+            onClick={action}
+            aria-label={`Info about ${label}`}
+          >
+            <Info size={14} strokeWidth={2.25} />
           </button>
         ) : tip ? (
           <button
             type="button"
-            className="text-xs text-[var(--muted)]"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[var(--border)] text-[var(--muted)] transition hover:border-[color-mix(in_srgb,var(--accent)_40%,transparent)] hover:text-[var(--accent)]"
             onClick={() => setOpen((v) => !v)}
             aria-label={`Tip about ${label}`}
           >
-            (i)
+            <Info size={14} strokeWidth={2.25} />
           </button>
         ) : null}
       </div>
