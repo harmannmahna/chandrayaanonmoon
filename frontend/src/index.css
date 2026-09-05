@@ -1,0 +1,221 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: dark;
+  --bg0: #02040a;
+  --bg1: #070b16;
+  --glass: rgba(16, 22, 36, 0.55);
+  --glass-strong: rgba(10, 14, 24, 0.78);
+  --border: rgba(255, 255, 255, 0.16);
+  --text: #f4f7ff;
+  --muted: rgba(244, 247, 255, 0.68);
+  --accent: #58e0d0;
+  --accent-2: #a78bfa;
+  --danger: #fb7185;
+  --warn: #facc15;
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+  --bg0: #cfe8ff;
+  --bg1: #eef6ff;
+  --glass: rgba(255, 255, 255, 0.55);
+  --glass-strong: rgba(255, 255, 255, 0.78);
+  --border: rgba(20, 40, 80, 0.14);
+  --text: #0b1220;
+  --muted: rgba(11, 18, 32, 0.65);
+  --accent: #0f766e;
+  --accent-2: #6d28d9;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: "Segoe UI", "IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+  color: var(--text);
+  background: var(--bg0);
+  overflow-x: hidden;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+.glass {
+  background: var(--glass);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  border-radius: 1.25rem;
+}
+
+.glass-strong {
+  background: var(--glass-strong);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-radius: 1.25rem;
+}
+
+.kicker {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+  padding: 0.7rem 1.15rem;
+  border-radius: 0.85rem;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: transform 0.18s ease, filter 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  filter: brightness(1.05);
+}
+
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  background: #fff;
+  color: #05070f;
+  box-shadow: 0 0 24px rgba(255, 255, 255, 0.12);
+}
+
+html[data-theme="light"] .btn-primary {
+  background: #0b1220;
+  color: #fff;
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--border);
+}
+
+.btn-accent {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  color: var(--accent);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.starfield,
+.skyfield {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.starfield {
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(120, 100, 200, 0.12), transparent 55%),
+    radial-gradient(ellipse 50% 40% at 90% 10%, rgba(40, 120, 180, 0.1), transparent 50%),
+    #02040a;
+}
+
+.starfield::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(1px 1px at 20px 30px, white, transparent),
+    radial-gradient(1px 1px at 80px 120px, rgba(255, 255, 255, 0.8), transparent),
+    radial-gradient(1.5px 1.5px at 160px 60px, white, transparent),
+    radial-gradient(1px 1px at 220px 180px, rgba(255, 255, 255, 0.7), transparent),
+    radial-gradient(1px 1px at 300px 90px, white, transparent),
+    radial-gradient(1px 1px at 40px 220px, rgba(255, 255, 255, 0.6), transparent);
+  background-size: 340px 260px;
+  opacity: 0.7;
+  animation: drift 120s linear infinite;
+}
+
+.skyfield {
+  background: linear-gradient(180deg, #9fd0ff 0%, #d7ecff 45%, #f3f8ff 100%);
+}
+
+.skyfield::before {
+  content: "";
+  position: absolute;
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  right: 12%;
+  top: 10%;
+  background: radial-gradient(circle at 35% 35%, #fff7c2, #ffd36a 55%, #f5a623 100%);
+  box-shadow: 0 0 60px rgba(255, 210, 100, 0.55);
+}
+
+.skyfield::after {
+  content: "";
+  position: absolute;
+  inset: 20% -10% auto -10%;
+  height: 180px;
+  background: radial-gradient(ellipse at center, rgba(255, 255, 255, 0.85), transparent 70%);
+  filter: blur(2px);
+  animation: cloud 80s linear infinite;
+}
+
+@keyframes drift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-340px, -130px, 0);
+  }
+}
+
+@keyframes cloud {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(12%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .starfield::before,
+  .skyfield::after {
+    animation: none;
+  }
+}
+
+.app-shell {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+}
+
+.page {
+  width: min(1200px, 94vw);
+  margin: 0 auto;
+  padding: 1.25rem 0 3rem;
+}
