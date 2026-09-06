@@ -8,9 +8,11 @@ from typing import Any
 
 import cv2
 import numpy as np
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.base import BaseHTTPMiddleware
 
 from pipeline.clahe import run_clahe
 from pipeline.ice import run_ice_detection
@@ -22,13 +24,27 @@ ROOT = Path(__file__).resolve().parent
 UPLOAD_DIR = ROOT / "uploads"
 RESULT_DIR = ROOT / "results"
 SAMPLE_DIR = ROOT / "samples"
+FRONTEND_DIST = ROOT.parent / "frontend" / "dist"
 
 for d in (UPLOAD_DIR, RESULT_DIR, SAMPLE_DIR):
     d.mkdir(parents=True, exist_ok=True)
 
 app = FastAPI(title="LunaMatch API", version="1.0.0")
-# Credentials cannot be paired with wildcard origins — that combo makes browsers
-# reject fetches with a generic "Failed to fetch" / CORS network error.
+
+
+class StripApiPrefixMiddleware(BaseHTTPMiddleware):
+    """Allow both `/health` and `/api/health` (Vite proxy + single-origin UI)."""
+
+    async def dispatch(self, request: Request, call_next):
+        path = request.scope.get("path", "")
+        if path == "/api":
+            request.scope["path"] = "/"
+        elif path.startswith("/api/"):
+            request.scope["path"] = path[4:]
+        return await call_next(request)
+
+
+# Wildcard origins + credentials=True makes browsers fail with "Failed to fetch".
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -36,6 +52,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+app.add_middleware(StripApiPrefixMiddleware)
 app.mount("/results", StaticFiles(directory=str(RESULT_DIR)), name="results")
 app.mount("/samples", StaticFiles(directory=str(SAMPLE_DIR)), name="samples")
 
@@ -72,10 +89,8 @@ def _draw_matches(ref: np.ndarray, src: np.ndarray, match: dict[str, Any]) -> np
 
 
 def _synth_lunar(seed: int, shade: float = 1.0, bias: float = 0.0) -> np.ndarray:
-    """Synthetic crater field with soft illumination so CLAHE has room to work."""
     rng = np.random.default_rng(seed)
     yy, xx = np.mgrid[0:512, 0:512]
-    # Low-frequency illumination / mare gradients
     illum = 0.55 + 0.35 * np.sin(xx / 90.0) * np.cos(yy / 110.0) + 0.12 * np.sin((xx + yy) / 140.0)
     base = (42 + 38 * illum).astype(np.float32)
     for _ in range(55):
@@ -86,29 +101,28 @@ def _synth_lunar(seed: int, shade: float = 1.0, bias: float = 0.0) -> np.ndarray
         rim = float(rng.integers(140, 230))
         cv2.circle(base, (cx, cy), radius, floor, -1)
         cv2.circle(base, (cx, cy), radius, rim, max(1, radius // 14))
-        # Soft bowl shading inside crater
         mask = (xx - cx) ** 2 + (yy - cy) ** 2 <= radius**2
         dist = np.sqrt(((xx - cx) ** 2 + (yy - cy) ** 2).astype(np.float32))
         bowl = np.clip(1.0 - dist / max(radius, 1), 0, 1)
         base[mask] = base[mask] * (0.65 + 0.35 * bowl[mask]) + floor * 0.15
     noise = rng.normal(0, 5.5, base.shape).astype(np.float32)
-    out = np.clip(base * shade + bias + noise, 0, 255).astype(np.uint8)
-    return out
+    return np.clip(base * shade + bias + noise, 0, 255).astype(np.uint8)
 
 
 def _ensure_samples(force: bool = False) -> list[Path]:
-    paths = [SAMPLE_DIR / "demo_reference.png", SAMPLE_DIR / "demo_source.png", SAMPLE_DIR / "demo_source_b.png"]
+    paths = [
+        SAMPLE_DIR / "demo_reference.png",
+        SAMPLE_DIR / "demo_source.png",
+        SAMPLE_DIR / "demo_source_b.png",
+    ]
     if not force and all(p.exists() for p in paths):
         return paths
     SAMPLE_DIR.mkdir(parents=True, exist_ok=True)
-    base = _synth_lunar(42, shade=1.0, bias=0.0)
+    base = _synth_lunar(42)
     H = np.array([[1.08, -0.04, 28.0], [0.035, 0.97, -12.0], [0.0, 0.0, 1.0]], dtype=np.float64)
-    # Dimmer / different sun angle for source A
-    warped = _synth_lunar(42, shade=0.72, bias=12.0)
-    warped = cv2.warpPerspective(warped, H, (512, 512), borderMode=cv2.BORDER_REFLECT)
+    warped = cv2.warpPerspective(_synth_lunar(42, shade=0.72, bias=12.0), H, (512, 512), borderMode=cv2.BORDER_REFLECT)
     H2 = np.array([[0.95, 0.05, -18.0], [-0.02, 1.05, 22.0], [0.0, 0.0, 1.0]], dtype=np.float64)
-    warped2 = _synth_lunar(42, shade=1.15, bias=-8.0)
-    warped2 = cv2.warpPerspective(warped2, H2, (512, 512), borderMode=cv2.BORDER_REFLECT)
+    warped2 = cv2.warpPerspective(_synth_lunar(42, shade=1.15, bias=-8.0), H2, (512, 512), borderMode=cv2.BORDER_REFLECT)
     cv2.imwrite(str(paths[0]), cv2.cvtColor(base, cv2.COLOR_GRAY2BGR))
     cv2.imwrite(str(paths[1]), cv2.cvtColor(warped, cv2.COLOR_GRAY2BGR))
     cv2.imwrite(str(paths[2]), cv2.cvtColor(warped2, cv2.COLOR_GRAY2BGR))
@@ -120,7 +134,7 @@ _ensure_samples()
 
 @app.get("/health")
 def health() -> dict[str, str]:
-    return {"status": "ok", "service": "lunamatch"}
+    return {"status": "ok", "service": "lunamatch", "python": "3.11"}
 
 
 @app.post("/upload")
@@ -158,7 +172,7 @@ async def load_demo() -> dict[str, Any]:
     job_id = uuid.uuid4().hex[:12]
     job_dir = UPLOAD_DIR / job_id
     job_dir.mkdir(parents=True, exist_ok=True)
-    paths = []
+    paths: list[str] = []
     for i, sample in enumerate(samples[:3]):
         out = job_dir / f"img_{i}.png"
         _save(out, cv2.imread(str(sample)))
@@ -197,6 +211,8 @@ async def process_clahe(job_id: str = Form(...)) -> dict[str, Any]:
     enhanced_paths: list[str] = []
     for i, path in enumerate(paths):
         original = cv2.imread(path)
+        if original is None:
+            raise HTTPException(400, f"Could not read uploaded image {i}")
         enhanced, meta = run_clahe(original)
         orig_out = out_dir / f"original_{i}.png"
         enh_out = out_dir / f"enhanced_{i}.png"
@@ -232,6 +248,8 @@ async def process_loftr(job_id: str = Form(...), source_index: int = Form(1)) ->
         raise HTTPException(400, "Invalid source_index")
     ref = cv2.imread(enhanced[ref_i])
     src = cv2.imread(enhanced[source_index])
+    if ref is None or src is None:
+        raise HTTPException(400, "Could not read CLAHE images")
     match = run_loftr_style(ref, src)
     preview = _draw_matches(ref, src, match)
     out_dir = RESULT_DIR / job_id / "loftr"
@@ -311,3 +329,37 @@ def status(job_id: str) -> dict[str, Any]:
         "message": job.get("message", ""),
         "results": job.get("results", {}),
     }
+
+
+# Prefer opening the UI here: http://127.0.0.1:8000/register
+# Same origin as the API → no Vite-proxy "Failed to fetch" on Start Processing.
+if FRONTEND_DIST.is_dir():
+    assets_dir = FRONTEND_DIST / "assets"
+    if assets_dir.is_dir():
+        app.mount("/assets", StaticFiles(directory=str(assets_dir)), name="frontend-assets")
+
+    @app.get("/")
+    async def spa_root() -> FileResponse:
+        return FileResponse(FRONTEND_DIST / "index.html")
+
+    @app.get("/{full_path:path}")
+    async def spa_fallback(full_path: str) -> FileResponse:
+        blocked = (
+            "docs",
+            "openapi.json",
+            "redoc",
+            "health",
+            "upload",
+            "demo",
+            "process",
+            "status",
+            "results",
+            "samples",
+            "api",
+        )
+        if full_path.startswith(blocked):
+            raise HTTPException(404, "Not found")
+        candidate = FRONTEND_DIST / full_path
+        if candidate.is_file():
+            return FileResponse(candidate)
+        return FileResponse(FRONTEND_DIST / "index.html")

@@ -169,7 +169,12 @@ export function RegistrationWizard() {
       const result = await runClahe(uploaded.job_id);
       setClahe(result);
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Upload failed");
+      const msg = e instanceof Error ? e.message : "Upload failed";
+      setError(
+        /failed to fetch|failed to reach|networkerror/i.test(msg)
+          ? "Cannot reach the API. Open http://127.0.0.1:8000/register (Python 3.11 backend must be running on port 8000), then try Start Processing again."
+          : msg,
+      );
       setStage("select");
     } finally {
       setBusy(false);

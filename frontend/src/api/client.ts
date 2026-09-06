@@ -1,48 +1,20 @@
-const ENV_BASE = (import.meta.env.VITE_API_BASE as string | undefined)?.replace(/\/$/, "");
-
-function candidateBases(): string[] {
-  const bases: string[] = [];
-  if (ENV_BASE) bases.push(ENV_BASE);
-  // Dev: Vite proxies /api → backend. Prefer this so one open port is enough.
-  bases.push("/api");
-  if (typeof window !== "undefined") {
-    const { protocol, hostname } = window.location;
-    // Fallback when the Vite proxy is unavailable (preview, odd tunnels, etc.).
-    if (hostname && hostname !== "localhost" && hostname !== "127.0.0.1") {
-      bases.push(`${protocol}//${hostname}:8000`);
-    }
-    bases.push("http://127.0.0.1:8000");
-    bases.push("http://localhost:8000");
-  }
-  return [...new Set(bases)];
-}
+/**
+ * Browser API client.
+ * Always talk to same-origin `/api` (Vite proxies to the Python backend).
+ * Absolute localhost fallbacks cause "Failed to fetch" when the UI is opened
+ * via a tunnel / remote preview, so we deliberately avoid them.
+ */
+const API_BASE = (import.meta.env.VITE_API_BASE as string | undefined)?.replace(/\/$/, "") || "/api";
 
 async function request(path: string, init?: RequestInit): Promise<Response> {
-  const bases = candidateBases();
-  let lastError: unknown;
-
-  for (const base of bases) {
-    const url = `${base}${path.startsWith("/") ? path : `/${path}`}`;
-    try {
-      const res = await fetch(url, init);
-      // Misconfigured proxy sometimes returns HTML 404 from the SPA — try next base.
-      const ctype = res.headers.get("content-type") || "";
-      if (res.status === 404 && ctype.includes("text/html") && bases.length > 1) {
-        lastError = new Error(`API not found at ${url}`);
-        continue;
-      }
-      return res;
-    } catch (err) {
-      lastError = err;
-    }
+  const url = `${API_BASE}${path.startsWith("/") ? path : `/${path}`}`;
+  try {
+    return await fetch(url, init);
+  } catch {
+    throw new Error(
+      "Failed to reach the LunaMatch API. Is the backend running on port 8000? (Python 3.11: `uvicorn main:app --host 0.0.0.0 --port 8000`)",
+    );
   }
-
-  const hint =
-    "Cannot reach LunaMatch API. Make sure the backend is running (`uvicorn main:app --host 0.0.0.0 --port 8000`) and refresh.";
-  if (lastError instanceof Error && /failed to fetch|networkerror|load failed/i.test(lastError.message)) {
-    throw new Error(hint);
-  }
-  throw lastError instanceof Error ? lastError : new Error(hint);
 }
 
 async function json<T>(res: Response): Promise<T> {
