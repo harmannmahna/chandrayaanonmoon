@@ -27,10 +27,12 @@ for d in (UPLOAD_DIR, RESULT_DIR, SAMPLE_DIR):
     d.mkdir(parents=True, exist_ok=True)
 
 app = FastAPI(title="LunaMatch API", version="1.0.0")
+# Credentials cannot be paired with wildcard origins — that combo makes browsers
+# reject fetches with a generic "Failed to fetch" / CORS network error.
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )

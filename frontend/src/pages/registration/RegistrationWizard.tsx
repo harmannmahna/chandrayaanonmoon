@@ -1,9 +1,9 @@
-import { useMemo, useRef, useState, type DragEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type DragEvent } from "react";
 import { Info } from "lucide-react";
 import { GlassCard } from "../../components/GlassCard";
 import { RocketLoader } from "../../components/RocketLoader";
 import { BeforeAfterSlider } from "../../components/BeforeAfterSlider";
-import { loadDemo, runClahe, runLoftr, runRansac, uploadImages } from "../../api/client";
+import { apiHealth, loadDemo, runClahe, runLoftr, runRansac, uploadImages } from "../../api/client";
 import { useAppStore } from "../../store/appStore";
 
 type Stage = "select" | "clahe" | "loftr" | "ransac" | "done";
@@ -61,6 +61,17 @@ export function RegistrationWizard() {
   const dragDepth = useRef<Record<number, number>>({});
 
   const ready = useMemo(() => files.every(Boolean), [files]);
+  const [apiOnline, setApiOnline] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void apiHealth().then((ok) => {
+      if (!cancelled) setApiOnline(ok);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const setSlotCount = (n: number) => {
     setCount(n);
@@ -125,15 +136,20 @@ export function RegistrationWizard() {
     setError(null);
     try {
       const demo = await loadDemo();
+      setApiOnline(true);
       setJobId(demo.job_id);
       setLastRegistrationJobId(demo.job_id);
       setCount(demo.count);
       setPreviews(demo.preview_urls);
-      setFiles(Array.from({ length: demo.count }, () => new File([], "demo.png")));
+      // Placeholder files so the upload CTA stays consistent; demo uses job_id on the server.
+      setFiles(
+        Array.from({ length: demo.count }, (_, i) => new File([`demo-${i}`], `demo_${i + 1}.png`, { type: "image/png" })),
+      );
       setStage("clahe");
       const result = await runClahe(demo.job_id);
       setClahe(result);
     } catch (e) {
+      setApiOnline(false);
       setError(e instanceof Error ? e.message : "Demo failed");
       setStage("select");
     } finally {
@@ -198,6 +214,16 @@ export function RegistrationWizard() {
           CLAHE → LoFTR-style matching → RANSAC, with animations and plain-language diagnostics.
         </p>
       </GlassCard>
+
+      {apiOnline === false && !error ? (
+        <div className="rounded-2xl border border-[color-mix(in_srgb,var(--danger)_45%,transparent)] bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] p-4 text-sm text-[var(--danger)]">
+          Cannot reach the LunaMatch API. Start the backend with
+          {" "}
+          <code className="rounded bg-black/30 px-1">uvicorn main:app --host 0.0.0.0 --port 8000</code>
+          {" "}
+          then refresh this page.
+        </div>
+      ) : null}
 
       {error ? (
         <div className="rounded-2xl border border-[color-mix(in_srgb,var(--danger)_45%,transparent)] bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] p-4 text-sm text-[var(--danger)]">
