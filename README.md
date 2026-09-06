@@ -20,6 +20,26 @@ on Chandrayaan-2 optical imagery.
 5. Mission Briefing narrative
 6. Dark/light mode + ambient soundtrack toggle
 
+
+## Run (recommended — fixes "Failed to fetch")
+
+Use **one server** so the UI and API share the same origin:
+
+```bash
+# Backend (Python 3.11)
+cd backend
+python3.11 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+# build UI once
+(cd ../frontend && npm install && npm run build)
+uvicorn main:app --host 0.0.0.0 --port 8000
+```
+
+Open **http://127.0.0.1:8000/register** (not only :5173).
+
+Optional Vite hot-reload UI still proxies `/api` → `:8000`, but if your browser tunnel breaks POSTs, prefer the single-origin URL above.
+
 ## Quick start
 
 ### Backend
@@ -29,7 +49,7 @@ cd backend
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-uvicorn main:app --reload --port 8000
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 ### Frontend
@@ -37,10 +57,12 @@ uvicorn main:app --reload --port 8000
 ```bash
 cd frontend
 npm install
-npm run dev
+npm run dev -- --host 0.0.0.0 --port 5173
 ```
 
 Open http://127.0.0.1:5173 — API calls proxy through `/api` to the backend.
+If you open the UI via a LAN/tunnel URL, keep the backend on `0.0.0.0:8000` so the
+browser fallback (`hostname:8000`) works when the Vite proxy is unavailable.
 
 ## Honesty notes
 

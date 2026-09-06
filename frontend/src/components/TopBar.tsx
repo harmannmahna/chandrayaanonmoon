@@ -31,10 +31,10 @@ export function TopBar() {
             <Link
               key={href}
               to={href}
-              className={`rounded-full px-3 py-1.5 text-xs tracking-[0.08em] uppercase transition ${
+              className={`rounded-full px-3 py-1.5 text-xs tracking-[0.08em] uppercase transition-all duration-300 ${
                 location.pathname === href
-                  ? "text-[var(--text)] underline decoration-[var(--accent)] underline-offset-4"
-                  : "text-[var(--muted)] hover:text-[var(--text)]"
+                  ? "bg-white/8 text-[var(--text)] underline decoration-[var(--accent)] underline-offset-4"
+                  : "text-[var(--muted)] hover:bg-white/5 hover:text-[var(--text)]"
               }`}
             >
               {label}
