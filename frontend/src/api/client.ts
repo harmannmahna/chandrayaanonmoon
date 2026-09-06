@@ -67,10 +67,14 @@ export type LoftrResponse = {
   mkpts0: number[][];
   mkpts1: number[][];
   mconf: number[];
+  unmatched0?: number[][];
+  unmatched1?: number[][];
   num_matches: number;
+  num_unmatched?: number;
   mean_confidence: number;
   weak_regions: WeakRegion[];
   preview_url: string;
+  unmatched_preview_url?: string;
   matcher: string;
 };
 

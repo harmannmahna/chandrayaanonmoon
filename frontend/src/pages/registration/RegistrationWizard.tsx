@@ -315,7 +315,7 @@ export function RegistrationWizard() {
           <div className="grid gap-4 md:grid-cols-2">
             {clahe.images.map((src, i) => (
               <div key={src}>
-                <BeforeAfterSlider beforeSrc={clahe.originals[i]} afterSrc={src} />
+                <BeforeAfterSlider beforeSrc={clahe.originals[i]} afterSrc={clahe.originals[i]} />
                 <p className="mt-2 text-xs text-[var(--muted)]">{clahe.notes[i]?.note}</p>
               </div>
             ))}
@@ -326,26 +326,50 @@ export function RegistrationWizard() {
 
       {stage === "loftr" && busy ? <RocketLoader title="Finding matching points…" tips={LOFTR_TIPS} /> : null}
       {stage === "loftr" && !busy && loftr ? (
-        <GlassCard className="space-y-4">
-          <p className="kicker">Stage 2 · LoFTR-style matching</p>
-          <img src={loftr.preview_url} alt="Matches" className="w-full rounded-2xl border border-[var(--border)]" />
-          <div className="grid gap-3 sm:grid-cols-3">
-            <Metric label="Matches" value={String(loftr.num_matches)} />
-            <Metric label="Mean confidence" value={`${(loftr.mean_confidence * 100).toFixed(1)}%`} />
-            <Metric label="Matcher" value="LoFTR-style" tip={loftr.matcher} />
-          </div>
-          <div className="rounded-2xl border border-[var(--border)] p-4">
-            <p className="kicker">Why is confidence low?</p>
-            <div className="mt-3 space-y-3">
-              {loftr.weak_regions.length ? loftr.weak_regions.map((r) => (
-                <div key={r.pixel_range} className="text-sm leading-6 text-[var(--muted)]">
-                  <strong className="text-[var(--text)]">{r.pixel_range}</strong> · {r.match_count} matches · {(r.mean_confidence * 100).toFixed(0)}% · {r.reason}
-                </div>
-              )) : <p className="text-sm text-[var(--muted)]">No weak tiles flagged.</p>}
+        <div className="space-y-4">
+          <GlassCard className="space-y-4">
+            <p className="kicker">Stage 2 · LoFTR-style matching</p>
+            <img src={loftr.preview_url} alt="Matches" className="w-full rounded-2xl border border-[var(--border)]" />
+            <p className="text-xs text-[var(--muted)]">
+              <span className="mr-3 inline-flex items-center gap-1.5"><span className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-400" /> Green = matched</span>
+              <span className="inline-flex items-center gap-1.5"><span className="inline-block h-2.5 w-2.5 rounded-full bg-red-500" /> Red = unmatched</span>
+            </p>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Metric label="Matches" value={String(loftr.num_matches)} />
+              <Metric label="Mean confidence" value={`${(loftr.mean_confidence * 100).toFixed(1)}%`} />
+              <Metric label="Matcher" value="LoFTR-style" tip={loftr.matcher} />
             </div>
-          </div>
+            <div className="rounded-2xl border border-[var(--border)] p-4">
+              <p className="kicker">Why is confidence low?</p>
+              <div className="mt-3 space-y-3">
+                {loftr.weak_regions.length ? loftr.weak_regions.map((r) => (
+                  <div key={r.pixel_range} className="text-sm leading-6 text-[var(--muted)]">
+                    <strong className="text-[var(--text)]">{r.pixel_range}</strong> · {r.match_count} matches · {(r.mean_confidence * 100).toFixed(0)}% · {r.reason}
+                  </div>
+                )) : <p className="text-sm text-[var(--muted)]">No weak tiles flagged.</p>}
+              </div>
+            </div>
+          </GlassCard>
+
+          <GlassCard className="space-y-4">
+            <p className="kicker">Unmatched points on the moon</p>
+            <p className="text-sm text-[var(--muted)]">
+              Keypoints detected on the reference scene that did not find a reliable partner in the source image
+              {typeof loftr.num_unmatched === "number" ? ` (${loftr.num_unmatched} total across both views)` : ""}.
+            </p>
+            {loftr.unmatched_preview_url ? (
+              <img
+                src={loftr.unmatched_preview_url}
+                alt="Unmatched points on the moon"
+                className="w-full rounded-2xl border border-[var(--border)]"
+              />
+            ) : (
+              <p className="text-sm text-[var(--muted)]">No unmatched preview available for this run.</p>
+            )}
+          </GlassCard>
+
           <button type="button" className="btn btn-primary" onClick={() => void goRansac()}>Next · Align with RANSAC</button>
-        </GlassCard>
+        </div>
       ) : null}
 
       {stage === "ransac" && busy ? <RocketLoader title="Aligning your images…" tips={RANSAC_TIPS} /> : null}

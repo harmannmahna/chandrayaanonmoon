@@ -28,12 +28,23 @@ def run_loftr_style(ref_bgr: np.ndarray, src_bgr: np.ndarray) -> dict[str, Any]:
     mkpts0: list[list[float]] = []
     mkpts1: list[list[float]] = []
     mconf: list[float] = []
+    unmatched0: list[list[float]] = []
+    unmatched1: list[list[float]] = []
+
+    matched_q: set[int] = set()
+    matched_t: set[int] = set()
 
     if d0 is not None and d1 is not None and len(k0) and len(k1):
         matcher = cv2.BFMatcher(cv2.NORM_HAMMING)
         pairs = matcher.knnMatch(d0, d1, k=2)
         for pair in pairs:
             if len(pair) < 2:
+                # No second neighbor → treat query as unmatched
+                if pair:
+                    qi = pair[0].queryIdx
+                    if qi not in matched_q:
+                        p0 = k0[qi].pt
+                        unmatched0.append([float(p0[0]), float(p0[1])])
                 continue
             a, b = pair
             if a.distance < 0.78 * b.distance:
@@ -46,6 +57,24 @@ def run_loftr_style(ref_bgr: np.ndarray, src_bgr: np.ndarray) -> dict[str, Any]:
                 mkpts0.append([float(p0[0]), float(p0[1])])
                 mkpts1.append([float(p1[0]), float(p1[1])])
                 mconf.append(conf)
+                matched_q.add(a.queryIdx)
+                matched_t.add(a.trainIdx)
+            else:
+                # Failed ratio test → unmatched on reference
+                p0 = k0[a.queryIdx].pt
+                unmatched0.append([float(p0[0]), float(p0[1])])
+
+        # Keypoints on either side never selected as a good match
+        for i, kp in enumerate(k0):
+            if i not in matched_q:
+                unmatched0.append([float(kp.pt[0]), float(kp.pt[1])])
+        for i, kp in enumerate(k1):
+            if i not in matched_t:
+                unmatched1.append([float(kp.pt[0]), float(kp.pt[1])])
+
+    # Deduplicate unmatched (ratio-fail + leftover pass can double-count)
+    unmatched0 = _dedupe_pts(unmatched0)
+    unmatched1 = _dedupe_pts(unmatched1)
 
     conf_arr = np.asarray(mconf, dtype=np.float32) if mconf else np.zeros((0,), dtype=np.float32)
     mean_conf = float(conf_arr.mean()) if len(conf_arr) else 0.0
@@ -56,11 +85,25 @@ def run_loftr_style(ref_bgr: np.ndarray, src_bgr: np.ndarray) -> dict[str, Any]:
         "mkpts0": mkpts0,
         "mkpts1": mkpts1,
         "mconf": mconf,
+        "unmatched0": unmatched0,
+        "unmatched1": unmatched1,
         "num_matches": len(mkpts0),
+        "num_unmatched": len(unmatched0) + len(unmatched1),
         "mean_confidence": round(mean_conf, 4),
         "weak_regions": weak_regions,
         "matcher": "AKAZE+ratio (LoFTR-style adapter — swap for KF.LoFTR when GPU weights available)",
     }
+
+
+def _dedupe_pts(pts: list[list[float]], tol: float = 1.5) -> list[list[float]]:
+    if not pts:
+        return []
+    kept: list[list[float]] = []
+    for p in pts:
+        if any(abs(p[0] - q[0]) < tol and abs(p[1] - q[1]) < tol for q in kept):
+            continue
+        kept.append(p)
+    return kept
 
 
 def _weak_regions(
