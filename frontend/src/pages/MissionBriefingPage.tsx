@@ -73,6 +73,28 @@ const TOPICS: BriefingTopic[] = [
       { label: "Solar system explorer", to: "/solar" },
     ],
   },
+  {
+    id: "ice-context",
+    kicker: "05 · LUNA/ICE",
+    title: "Radar-consistent ice screening & mission planning",
+    summary:
+      "Additional project detail: CPR/DOP evidence → potential subsurface-ice signatures → landing suitability → rover routes → scenario-based volume.",
+    details: [
+      "LUNA/ICE converts radar-derived CPR and DOP evidence into an explainable map of potential subsurface-ice signatures, then ranks landing zones and plans terrain- and illumination-aware rover routes.",
+      "Why it matters: lunar south-pole water ice may support science and ISRU; PSRs and doubly shadowed craters are important cold traps. Planning connects science targets with engineering constraints — planning support, not mission certification.",
+      "CPR (Circular Polarization Ratio) and DOP (Degree of Polarization) are polarimetric cues. High CPR alone can also come from rough rocks, so we combine CPR and DOP and restrict candidates to a doubly-shadowed mask.",
+      "Screening rule: IceCandidate = (CPR > 1.0) AND (DOP < 0.13) AND DoublyShadowedMask — an evidence-screening rule for radar-consistent ice candidates, not proof of confirmed ice.",
+      "Workflow: upload/enhance optical context → illustrative crater radar/terrain layers → ice analysis & confidence → prototype landing candidates → A* route (science-first / solar-aware / battery-supported) → scenario-based volume (0–5 m depth) → ZIP export.",
+      "Volume: V_ice = A_candidate × depth × iceFraction; M_ice = V_ice × 917 kg/m³. This is a scenario-based ice-volume estimate — assumptions do not measure actual depth or concentration.",
+      "Exports include ice_candidate_mask.png, ice_confidence_map.png, landing_suitability_map.png, mission_map_overlay.png, recommended_landing_site.json, rover_route.geojson/csv, ice_volume_scenarios.json, mission_metrics.json, assumptions_and_limits.txt.",
+      "Limits: illustrative/supplied demo layers (not calibrated DFSAR); never claims confirmed ice or guaranteed safe landing; not a full SAR/PDS/SPICE/DEM or certified rover nav suite.",
+      "Real mission extension: calibrated DFSAR, polarimetry, OHRC + DTM/DEM hazards, illumination ray tracing, geodesy, rover dynamics/thermal models, independent validation.",
+    ],
+    links: [
+      { label: "Open LUNA/ICE", to: "/ice" },
+      { label: "Register", to: "/register" },
+    ],
+  },
 ];
 
 export function MissionBriefingPage() {
@@ -88,8 +110,7 @@ export function MissionBriefingPage() {
         <p className="kicker">Context</p>
         <h1 className="mt-2 text-3xl font-semibold">Mission Briefing</h1>
         <p className="mt-2 max-w-2xl text-sm leading-7 text-[var(--muted)]">
-          Click a panel to expand — from Chandrayaan-2 and its instruments to the registration problem
-          LunaMatch addresses.
+          Click a panel to expand — from Chandrayaan-2 and its instruments to registration and LUNA/ICE project details.
         </p>
       </GlassCard>
 

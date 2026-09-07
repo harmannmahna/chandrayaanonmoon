@@ -1,11 +1,10 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { Outlet, Route, Routes, useLocation } from "react-router-dom";
+import { Navigate, Outlet, Route, Routes, useLocation } from "react-router-dom";
 import { TopBar } from "./components/TopBar";
 import { ThemeBackground } from "./components/ThemeBackground";
 import { LandingPage } from "./pages/LandingPage";
 import { RegistrationWizard } from "./pages/registration/RegistrationWizard";
 import { IceDetectionPage } from "./pages/IceDetectionPage";
-import { IceContextPage } from "./pages/ice/IceContextPage";
 import { SolarSystemPage } from "./pages/SolarSystemPage";
 import { MissionBriefingPage } from "./pages/MissionBriefingPage";
 import { useAppStore } from "./store/appStore";
@@ -47,7 +46,7 @@ export default function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/register" element={<RegistrationWizard />} />
         <Route path="/ice" element={<IceDetectionPage />} />
-        <Route path="/ice/context" element={<IceContextPage />} />
+        <Route path="/ice/context" element={<Navigate to="/briefing" replace />} />
         <Route path="/solar" element={<SolarSystemPage />} />
         <Route path="/briefing" element={<MissionBriefingPage />} />
       </Route>

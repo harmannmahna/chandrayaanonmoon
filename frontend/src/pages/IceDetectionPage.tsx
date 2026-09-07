@@ -328,7 +328,7 @@ export function IceDetectionPage() {
             <span className="rounded-full border border-[var(--border)] px-3 py-1 text-[10px] uppercase tracking-[0.12em] text-[var(--muted)]">
               Browser prototype · Illustrative/supplied layers · Planning support only
             </span>
-            <Link to="/ice/context" className="btn btn-secondary !min-h-9 !px-3 text-xs">
+            <Link to="/briefing" className="btn btn-secondary !min-h-9 !px-3 text-xs">
               Context
             </Link>
             <button type="button" className="btn btn-secondary !min-h-9 !px-3 text-xs" onClick={() => setShowWalkthrough((v) => !v)}>
