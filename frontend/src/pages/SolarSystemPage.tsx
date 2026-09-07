@@ -334,12 +334,19 @@ export function SolarSystemPage() {
   return (
     <div className="page space-y-6">
       <GlassCard>
-        <p className="kicker">Explore</p>
-        <h1 className="mt-2 text-3xl font-semibold">Solar System</h1>
-        <p className="mt-2 max-w-2xl text-sm leading-7 text-[var(--muted)]">
-          Click any planet in the view or use the buttons. Each body opens facts plus LunaMatch links
-          where relevant.
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="kicker">Explore</p>
+            <h1 className="mt-2 text-3xl font-semibold">Solar System</h1>
+            <p className="mt-2 max-w-2xl text-sm leading-7 text-[var(--muted)]">
+              Click any planet in the view or use the buttons. Each body opens facts plus LunaMatch links
+              where relevant.
+            </p>
+          </div>
+          <Link to="/illumination" className="btn btn-primary !min-h-9 text-xs">
+            Illumination Lab
+          </Link>
+        </div>
       </GlassCard>
 
       <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
