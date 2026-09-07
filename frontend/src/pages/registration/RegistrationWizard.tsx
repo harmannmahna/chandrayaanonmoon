@@ -37,6 +37,14 @@ function nearestRmseGuide(rmse: number): number {
   return best;
 }
 
+/** Compact readable formatting for homography entries (keeps tiny perspective terms visible). */
+function formatHomographyValue(v: number): string {
+  const abs = Math.abs(v);
+  if (abs !== 0 && abs < 1e-3) return v.toExponential(2);
+  if (abs >= 100) return v.toFixed(2);
+  return v.toFixed(4);
+}
+
 async function downloadImage(url: string, filename: string) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(`Download failed (${res.status})`);
@@ -451,7 +459,14 @@ export function RegistrationWizard() {
               </figure>
               <figure>
                 <img src={ransac.tint_overlay_url} alt="Tint" className="w-full rounded-2xl border border-[var(--border)]" />
-                <figcaption className="mt-2 text-xs text-[var(--muted)]">Cyan reference + yellow warped source</figcaption>
+                <figcaption className="mt-2 text-xs text-[var(--muted)]">
+                  <span className="mr-2 inline-flex items-center gap-1.5">
+                    <span className="inline-block h-2.5 w-2.5 rounded-full bg-red-500" /> Red = reference
+                  </span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="inline-block h-2.5 w-2.5 rounded-full bg-blue-500" /> Blue = warped source
+                  </span>
+                </figcaption>
               </figure>
             </div>
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -459,14 +474,44 @@ export function RegistrationWizard() {
               <Metric label="Inlier ratio" value={`${(ransac.inlier_ratio * 100).toFixed(1)}%`} tip="Matches agreeing with the homography." />
               <Metric label="Inlier count" value={String(ransac.inlier_count)} />
               <Metric label="RMSE (px)" value={ransac.rmse_px.toFixed(2)} tip="Pixel reprojection error on inliers." />
-              <Metric label="Transform H" value="3×3 matrix" action={() => setShowHInfo(true)} />
+              <div className="rounded-2xl border border-[var(--border)] bg-black/20 p-4 sm:col-span-2 lg:col-span-1">
+                <div className="flex items-center justify-between gap-2">
+                  <p className="kicker">Transform H</p>
+                  <button
+                    type="button"
+                    className="inline-flex h-7 w-7 items-center justify-center rounded-full border border-[color-mix(in_srgb,var(--accent)_45%,transparent)] text-[var(--accent)] transition hover:bg-[color-mix(in_srgb,var(--accent)_14%,transparent)]"
+                    onClick={() => setShowHInfo((v) => !v)}
+                    aria-label="Info about Transform H"
+                  >
+                    <Info size={14} strokeWidth={2.25} />
+                  </button>
+                </div>
+                <div className="mt-3 overflow-x-auto">
+                  <table className="w-full border-collapse font-mono text-[11px] leading-5 text-[var(--accent)] sm:text-xs">
+                    <tbody>
+                      {ransac.H.map((row, ri) => (
+                        <tr key={ri}>
+                          {row.map((v, ci) => (
+                            <td key={ci} className="px-1 py-0.5 text-right tabular-nums">
+                              {formatHomographyValue(v)}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
               <Metric label="Δ rot / scale" value={`${ransac.rotation_deg.toFixed(1)}° / ${ransac.scale.toFixed(2)}×`} />
             </div>
             {showHInfo ? (
               <div className="rounded-2xl border border-[var(--border)] bg-black/30 p-4 text-sm leading-6">
                 <p className="kicker mb-2">What is the transformation matrix?</p>
-                <p className="text-[var(--muted)]">This 3×3 homography is the recipe that rotates, scales, shifts and skews the source into the reference frame.</p>
-                <pre className="mt-3 overflow-auto text-xs text-[var(--accent)]">{ransac.H.map((row) => row.map((v) => v.toFixed(4)).join("  ")).join("\n")}</pre>
+                <p className="text-[var(--muted)]">
+                  This 3×3 homography is the recipe that rotates, scales, shifts and skews the source into the reference frame.
+                  Numbers above are the nine matrix entries shown row-by-row.
+                </p>
+                <pre className="mt-3 overflow-auto text-xs text-[var(--accent)]">{ransac.H.map((row) => row.map((v) => formatHomographyValue(v)).join("  ")).join("\n")}</pre>
                 <button type="button" className="btn btn-secondary mt-3" onClick={() => setShowHInfo(false)}>Close</button>
               </div>
             ) : null}

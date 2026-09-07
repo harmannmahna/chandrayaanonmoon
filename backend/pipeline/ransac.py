@@ -98,14 +98,19 @@ def _decompose(H: np.ndarray) -> tuple[float, float, float, float]:
 
 
 def _tint_overlay(ref: np.ndarray, warped: np.ndarray) -> np.ndarray:
-    """Cyan reference + yellow warped — aligned areas look neutral; misalignment fringes."""
+    """Red reference + blue warped — overlap reads clearly; misalignment shows red/blue fringes.
+
+    OpenCV images are BGR: channel 0=blue, 1=green, 2=red.
+    """
     ref_f = ref.astype(np.float32)
     war_f = warped.astype(np.float32)
-    cyan = ref_f.copy()
-    cyan[:, :, 2] *= 0.35  # reduce red
-    yellow = war_f.copy()
-    yellow[:, :, 0] *= 0.35  # reduce blue
-    blend = np.clip(0.55 * cyan + 0.55 * yellow, 0, 255).astype(np.uint8)
+    red = ref_f.copy()
+    red[:, :, 0] *= 0.15  # suppress blue
+    red[:, :, 1] *= 0.2  # suppress green
+    blue = war_f.copy()
+    blue[:, :, 1] *= 0.2  # suppress green
+    blue[:, :, 2] *= 0.15  # suppress red
+    blend = np.clip(0.55 * red + 0.55 * blue, 0, 255).astype(np.uint8)
     return blend
 
 
