@@ -214,8 +214,14 @@ export function IceDetectionPage() {
   };
 
   const enterMission = () => {
+    const moonPhoto =
+      clahe?.images?.[0] ||
+      previews.find((p): p is string => Boolean(p)) ||
+      "/moon-albedo.jpg";
     const ds = buildDemoCraterDataset();
+    ds.baseTexture = moonPhoto;
     setDataset(ds);
+    setLayers(new Set<LayerKey>(["psr", "iceCandidates", "roverRoute"]));
     setIceMask(null);
     setIceConfidence(null);
     setClusters([]);
@@ -544,7 +550,13 @@ export function IceDetectionPage() {
                 type="button"
                 className="btn btn-secondary w-full !min-h-9 text-xs"
                 onClick={() => {
-                  setDataset(buildDemoCraterDataset(Date.now() % 100000));
+                  const moonPhoto =
+                    clahe?.images?.[0] ||
+                    previews.find((p): p is string => Boolean(p)) ||
+                    "/moon-albedo.jpg";
+                  const ds = buildDemoCraterDataset(Date.now() % 100000);
+                  ds.baseTexture = moonPhoto;
+                  setDataset(ds);
                   setIceMask(null);
                   setClusters([]);
                   setSummary(null);
