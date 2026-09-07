@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, type DragEvent } from "react";
 import { Link } from "react-router-dom";
 import { GlassCard } from "../components/GlassCard";
 import { RocketLoader } from "../components/RocketLoader";
@@ -56,8 +56,10 @@ const ALL_LAYERS: LayerKey[] = [
   "roverRoute",
 ];
 
-function isImageFile(f: File | null) {
-  return !!f && (f.type.startsWith("image/") || /\.(png|jpe?g|webp|gif|bmp|tif{1,2})$/i.test(f.name));
+function isImageFile(f: File | null | undefined): f is File {
+  if (!f) return false;
+  if (f.type.startsWith("image/")) return true;
+  return /\.(png|jpe?g|webp|gif|bmp|tif{1,2})$/i.test(f.name);
 }
 
 export function IceDetectionPage() {
@@ -66,9 +68,12 @@ export function IceDetectionPage() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [jobId, setJobId] = useState<string | null>(null);
+  const [count, setCount] = useState(2);
   const [files, setFiles] = useState<(File | null)[]>([null, null]);
   const [previews, setPreviews] = useState<(string | null)[]>([null, null]);
   const [clahe, setClahe] = useState<ClaheResponse | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const dragDepth = useRef<Record<number, number>>({});
 
   // Stage 3 mission state
   const [dataset, setDataset] = useState<CraterDataset | null>(null);
@@ -108,7 +113,13 @@ export function IceDetectionPage() {
     }
   }, [selectedCluster, summary, volumeParams]);
 
-  const ready = files.every(Boolean);
+  const ready = useMemo(() => files.every(Boolean), [files]);
+
+  const setSlotCount = (n: number) => {
+    setCount(n);
+    setFiles(Array.from({ length: n }, (_, i) => files[i] ?? null));
+    setPreviews(Array.from({ length: n }, (_, i) => previews[i] ?? null));
+  };
 
   const setSlot = (i: number, file: File | null) => {
     if (file && !isImageFile(file)) {
@@ -129,6 +140,39 @@ export function IceDetectionPage() {
     });
   };
 
+  const onDragEnter = (index: number, e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragDepth.current[index] = (dragDepth.current[index] ?? 0) + 1;
+    setDragOverIndex(index);
+  };
+
+  const onDragOver = (e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer) e.dataTransfer.dropEffect = "copy";
+  };
+
+  const onDragLeave = (index: number, e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragDepth.current[index] = Math.max(0, (dragDepth.current[index] ?? 0) - 1);
+    if ((dragDepth.current[index] ?? 0) === 0) {
+      setDragOverIndex((cur) => (cur === index ? null : cur));
+    }
+  };
+
+  const onDrop = (index: number, e: DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragDepth.current[index] = 0;
+    setDragOverIndex(null);
+    const list = e.dataTransfer?.files;
+    if (!list?.length) return;
+    const image = Array.from(list).find((f) => isImageFile(f)) ?? null;
+    setSlot(index, image);
+  };
+
   const startDemo = async () => {
     setBusy(true);
     setError(null);
@@ -136,6 +180,7 @@ export function IceDetectionPage() {
       const demo = await loadDemo();
       setLastRegistrationJobId(demo.job_id);
       setJobId(demo.job_id);
+      setCount(demo.count);
       setPreviews(demo.preview_urls);
       setFiles(Array.from({ length: demo.count }, (_, i) => new File([`demo-${i}`], `demo_${i + 1}.png`, { type: "image/png" })));
       setStage("enhance");
@@ -377,39 +422,73 @@ export function IceDetectionPage() {
             Same idea as registration: bring lunar imagery into the pipeline first. Stage 3 still labels radar layers as
             illustrative/supplied demo grids.
           </p>
-          <div className="grid gap-4 md:grid-cols-2">
-            {[0, 1].map((i) => (
-              <div
-                key={i}
-                role="button"
-                tabIndex={0}
-                onClick={() => document.getElementById(`ice-slot-${i}`)?.click()}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") document.getElementById(`ice-slot-${i}`)?.click();
-                }}
-                className="flex min-h-44 cursor-pointer flex-col rounded-2xl border border-dashed border-[var(--border)] bg-black/20 p-4"
-              >
-                <span className="kicker">{i === 0 ? "Reference / context" : "Source / patch"}</span>
-                <div className="mt-3 flex flex-1 items-center justify-center overflow-hidden rounded-xl bg-black/40">
-                  {previews[i] ? (
-                    <img src={previews[i]!} alt="" className="h-36 w-full object-cover grayscale" />
-                  ) : (
-                    <span className="px-3 text-center text-sm text-[var(--muted)]">Click to browse image</span>
-                  )}
-                </div>
-                <input
-                  id={`ice-slot-${i}`}
-                  className="sr-only"
-                  type="file"
-                  accept="image/*"
-                  onClick={(e) => e.stopPropagation()}
-                  onChange={(e) => {
-                    setSlot(i, e.target.files?.[0] ?? null);
-                    e.target.value = "";
+          <div>
+            <p className="kicker">How many images?</p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {[2, 3, 4, 5].map((n) => (
+                <button
+                  key={n}
+                  type="button"
+                  className={`btn ${count === n ? "btn-primary" : "btn-secondary"}`}
+                  onClick={() => setSlotCount(n)}
+                >
+                  {n}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: count }).map((_, i) => {
+              const active = dragOverIndex === i;
+              return (
+                <div
+                  key={i}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => document.getElementById(`ice-slot-${i}`)?.click()}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      document.getElementById(`ice-slot-${i}`)?.click();
+                    }
                   }}
-                />
-              </div>
-            ))}
+                  onDragEnter={(e) => onDragEnter(i, e)}
+                  onDragOver={onDragOver}
+                  onDragLeave={(e) => onDragLeave(i, e)}
+                  onDrop={(e) => onDrop(i, e)}
+                  className={`flex min-h-48 cursor-pointer flex-col rounded-2xl border border-dashed p-4 transition ${
+                    active
+                      ? "border-[var(--accent)] bg-[color-mix(in_srgb,var(--accent)_14%,transparent)] ring-2 ring-[color-mix(in_srgb,var(--accent)_35%,transparent)]"
+                      : "border-[var(--border)] bg-black/20"
+                  }`}
+                >
+                  <span className="kicker">{i === 0 ? "Reference / context" : `Source ${i} / patch`}</span>
+                  <div className="pointer-events-none mt-3 flex flex-1 items-center justify-center overflow-hidden rounded-xl bg-black/40">
+                    {previews[i] ? (
+                      <img src={previews[i]!} alt="" className="h-40 w-full object-cover grayscale" />
+                    ) : (
+                      <span className="px-3 text-center text-sm text-[var(--muted)]">
+                        {active ? "Release to drop image" : "Drag & drop image here, or click to browse"}
+                      </span>
+                    )}
+                  </div>
+                  <input
+                    id={`ice-slot-${i}`}
+                    className="sr-only"
+                    type="file"
+                    accept="image/*"
+                    onClick={(e) => e.stopPropagation()}
+                    onChange={(e) => {
+                      setSlot(i, e.target.files?.[0] ?? null);
+                      e.target.value = "";
+                    }}
+                  />
+                  {files[i] ? (
+                    <p className="mt-3 truncate text-xs text-[var(--muted)]">{files[i]!.name || "Image selected"}</p>
+                  ) : null}
+                </div>
+              );
+            })}
           </div>
           <div className="flex flex-wrap gap-3">
             <button type="button" className="btn btn-primary" disabled={!ready || busy} onClick={() => void startUpload()}>
