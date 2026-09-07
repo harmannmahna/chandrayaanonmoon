@@ -210,6 +210,39 @@ export function RegistrationWizard() {
     }
   };
 
+  /** Skip step-by-step: load demo and run CLAHE → matching → RANSAC to the end. */
+  const skipToFullDemo = async () => {
+    setBusy(true);
+    setError(null);
+    try {
+      const demo = await loadDemo();
+      setApiOnline(true);
+      setJobId(demo.job_id);
+      setLastRegistrationJobId(demo.job_id);
+      setCount(demo.count);
+      setPreviews(demo.preview_urls);
+      setFiles(
+        Array.from({ length: demo.count }, (_, i) => new File([`demo-${i}`], `demo_${i + 1}.png`, { type: "image/png" })),
+      );
+      setStage("clahe");
+      const claheResult = await runClahe(demo.job_id);
+      setClahe(claheResult);
+      setStage("loftr");
+      const matchResult = await runLoftr(demo.job_id, Math.min(1, demo.count - 1));
+      setLoftr(matchResult);
+      setStage("ransac");
+      const ransacResult = await runRansac(demo.job_id);
+      setRansac(ransacResult);
+      setStage("done");
+    } catch (e) {
+      setApiOnline(false);
+      setError(e instanceof Error ? e.message : "Skip demo failed");
+      setStage("select");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div className="page space-y-6">
       <GlassCard>
@@ -304,6 +337,9 @@ export function RegistrationWizard() {
           <div className="flex flex-wrap gap-3">
             <button type="button" className="btn btn-primary" disabled={!ready || busy} onClick={() => void startUpload()}>Start Processing</button>
             <button type="button" className="btn btn-secondary" disabled={busy} onClick={() => void startDemo()}>Load demo pair</button>
+            <button type="button" className="btn btn-secondary" disabled={busy} onClick={() => void skipToFullDemo()}>
+              Skip
+            </button>
           </div>
         </GlassCard>
       ) : null}
