@@ -107,24 +107,6 @@ export function BeforeAfterSlider({
         >
           {afterLabel}
         </span>
-
-        {/* ENHANCED again — just to the right of the divider ("other side" of ORIGINAL) */}
-        <span
-          style={{
-            ...labelBase,
-            left: `calc(${pos}% + 10px)`,
-            color: "#0b1220",
-            background: "#facc15",
-            border: "1px solid rgba(0,0,0,0.35)",
-            transition: dragging ? "none" : "left 0.18s cubic-bezier(0.22, 1, 0.36, 1)",
-            maxWidth: "46%",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-            whiteSpace: "nowrap",
-          }}
-        >
-          {afterLabel}
-        </span>
       </div>
 
       {/* Caption outside the dark image so labels are always readable */}
