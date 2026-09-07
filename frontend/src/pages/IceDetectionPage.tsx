@@ -12,6 +12,7 @@ import { createLandingSuitabilityGrid, rankLandingCandidates } from "../lib/ice/
 import { planAStarRoute } from "../lib/ice/pathPlanning";
 import { computeIceVolumeScenario, getDefaultScenarios } from "../lib/ice/volumeEstimator";
 import { downloadMissionPackage, gridToPngBlob } from "../lib/ice/exports";
+import { IceLunaGuide } from "../components/mission/IceLunaGuide";
 import {
   DEFAULT_ICE_PARAMS,
   DEFAULT_LANDING_PARAMS,
@@ -913,6 +914,25 @@ export function IceDetectionPage() {
                 <li>Route is grid-based planning support, not mission certification.</li>
                 <li>Volume is scenario-based and assumption-dependent (0–5 m depth).</li>
               </ul>
+              <IceLunaGuide
+                cpr={selectedCluster?.meanCPR}
+                dop={selectedCluster?.meanDOP}
+                shadowed
+                cprThr={iceParams.cprThreshold}
+                dopThr={iceParams.dopThreshold}
+                route={
+                  route
+                    ? {
+                        mode: routeParams.mode,
+                        distanceM: route.distanceMeters,
+                        meanSlope: route.meanSlopeDegrees,
+                        shadowFraction: route.shadowFraction,
+                        hazardCells: route.hazardCellsEncountered,
+                        feasibility: route.feasibility,
+                      }
+                    : null
+                }
+              />
               <button type="button" className="btn btn-primary w-full" onClick={() => void exportPackage()}>
                 Download mission package (.zip)
               </button>

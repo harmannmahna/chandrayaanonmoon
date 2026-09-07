@@ -8,8 +8,11 @@ optical imagery, with an educational ice/traverse planner.
 
 - **Frontend:** React + Vite + TypeScript, Tailwind CSS v4, Framer Motion,
   react-three-fiber + drei
-- **Backend:** FastAPI, OpenCV (CLAHE + RANSAC), AKAZE + Lowe-ratio correspondence adapter
-  (LoFTR-ready response shape; swap for `kornia.feature.LoFTR` when GPU weights available)
+- **Backend:** FastAPI, OpenCV (CLAHE + RANSAC), MatcherEngine router:
+  - `akaze` — classical AKAZE + Lowe ratio (always available baseline)
+  - `superpoint-lightglue` — optional pretrained SuperPoint + LightGlue (torch/kornia)
+  - `loftr` — optional pretrained LoFTR outdoor (torch/kornia)
+- Mission UX: reliability agent, experiment history, LunaGuide (offline), Ctrl/Cmd+K palette
 
 ## Features
 
@@ -20,7 +23,8 @@ optical imagery, with an educational ice/traverse planner.
 4. Solar System explorer + Illumination Lab (educational sun-angle visuals)
 5. Mission Briefing narrative
 6. Dark/light mode + ambient soundtrack toggle
-
+7. AI model selector + Match Reliability Agent + experiment JSON export (Register)
+8. Command palette (`Ctrl/Cmd+K`)
 
 ## Run (recommended — fixes "Failed to fetch")
 
@@ -39,7 +43,17 @@ uvicorn main:app --host 0.0.0.0 --port 8000
 
 Open **http://127.0.0.1:8000/register** (not only :5173).
 
-Optional Vite hot-reload UI still proxies `/api` → `:8000`, but if your browser tunnel breaks POSTs, prefer the single-origin URL above.
+### Optional AI engines
+
+```bash
+cd backend
+source .venv/bin/activate
+pip install -r requirements-ai.txt
+# restart uvicorn; check GET /matchers
+```
+
+Without these deps, AI Fast / AI Robust show **Unavailable**. Matching can fall back to
+**AKAZE** and will be labeled **Fallback used** — results are never silently labeled as LoFTR.
 
 ## Quick start
 
@@ -65,11 +79,21 @@ Open http://127.0.0.1:5173 — API calls proxy through `/api` to the backend.
 If you open the UI via a LAN/tunnel URL, keep the backend on `0.0.0.0:8000` so the
 browser fallback (`hostname:8000`) works when the Vite proxy is unavailable.
 
+### Backend unit checks
+
+```bash
+cd backend
+source .venv/bin/activate
+python -m pytest tests/test_mission_ai.py -q
+```
+
 ## Honesty notes
 
-- Matcher is an **AKAZE + Lowe-ratio adapter** with a LoFTR-ready interface — not trained LoFTR weights.
+- Default matcher is **AKAZE + Lowe-ratio**, not trained LoFTR. Optional LoFTR / SuperPoint+LightGlue
+  only run when `requirements-ai.txt` is installed and weights load successfully.
 - Demo imagery may be sample crater fields when mission patches are unavailable.
 - RMSE is inlier pixel reprojection error, not lunar geodetic accuracy.
+- Reliability score is an internal explainable quality metric — not independent geodetic accuracy.
 - Ice CPR/DOP maps in the demo planner are illustrative; thresholds demonstrate screening logic.
 - Illumination Lab visuals are educational / synthetic — not SPICE or official PSR products.
 - Not an official ISRO product.

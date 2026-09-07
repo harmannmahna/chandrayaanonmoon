@@ -94,6 +94,22 @@ export type LoftrResponse = {
   preview_url: string;
   unmatched_preview_url?: string;
   matcher: string;
+  engine?: string;
+  requested_engine?: string;
+  fallback_used?: boolean;
+  fallback_reason?: string;
+  runtime_ms?: number;
+  status?: string;
+  illumination_delta?: number;
+  blur_proxy_ref?: number;
+  blur_proxy_src?: number;
+};
+
+export type ReliabilityResult = {
+  score: number;
+  trust_label: string;
+  reasons: string[];
+  limitation: string;
 };
 
 export type RansacResponse = {
@@ -110,6 +126,22 @@ export type RansacResponse = {
   overlay_url: string;
   tint_overlay_url: string;
   conclusion: string;
+  reliability?: ReliabilityResult;
+  engine?: string;
+  matcher?: string;
+  fallback_used?: boolean;
+  runtime_ms_match?: number;
+  raw_match_count?: number;
+};
+
+export type MatcherEngineInfo = {
+  engine: "akaze" | "superpoint-lightglue" | "loftr";
+  label: string;
+  ui_label: string;
+  description: string;
+  available: boolean;
+  status: string;
+  detail?: string;
 };
 
 export type IceRegion = {
@@ -160,10 +192,17 @@ export async function runClahe(jobId: string) {
   return json<ClaheResponse>(await request("/process/clahe", { method: "POST", body: form }));
 }
 
-export async function runLoftr(jobId: string, sourceIndex = 1) {
+export async function runLoftr(
+  jobId: string,
+  sourceIndex = 1,
+  engine: "akaze" | "superpoint-lightglue" | "loftr" = "akaze",
+  allowFallback = true,
+) {
   const form = new FormData();
   form.append("job_id", jobId);
   form.append("source_index", String(sourceIndex));
+  form.append("engine", engine);
+  form.append("allow_fallback", String(allowFallback));
   return json<LoftrResponse>(await request("/process/loftr", { method: "POST", body: form }));
 }
 
@@ -171,6 +210,26 @@ export async function runRansac(jobId: string) {
   const form = new FormData();
   form.append("job_id", jobId);
   return json<RansacResponse>(await request("/process/ransac", { method: "POST", body: form }));
+}
+
+export async function listMatchers() {
+  return json<{ engines: MatcherEngineInfo[] }>(await request("/matchers"));
+}
+
+export async function runMatch(opts: {
+  jobId?: string;
+  engine?: "akaze" | "superpoint-lightglue" | "loftr";
+  sourceIndex?: number;
+  allowFallback?: boolean;
+}) {
+  const form = new FormData();
+  if (opts.jobId) form.append("job_id", opts.jobId);
+  form.append("engine", opts.engine ?? "akaze");
+  form.append("source_index", String(opts.sourceIndex ?? 1));
+  form.append("allow_fallback", String(opts.allowFallback ?? true));
+  return json<LoftrResponse & { engine_catalog?: MatcherEngineInfo[] }>(
+    await request("/match", { method: "POST", body: form }),
+  );
 }
 
 export async function runIce(jobId?: string) {

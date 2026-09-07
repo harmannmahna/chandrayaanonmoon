@@ -17,8 +17,9 @@ from starlette.middleware.base import BaseHTTPMiddleware
 from pipeline.clahe import run_clahe
 from pipeline.ice import run_ice_detection
 from pipeline.jobs import init_jobs
-from pipeline.matcher import run_loftr_style
+from pipeline.matcher_router import list_engines, match_images
 from pipeline.ransac import run_ransac
+from pipeline.reliability import score_registration
 
 ROOT = Path(__file__).resolve().parent
 UPLOAD_DIR = ROOT / "uploads"
@@ -189,6 +190,110 @@ def health() -> dict[str, str]:
     return {"status": "ok", "service": "lunamatch", "python": "3.11"}
 
 
+@app.get("/matchers")
+def matchers_status() -> dict[str, Any]:
+    """List MatcherEngine availability for the Register model selector."""
+    return {"engines": list_engines()}
+
+
+def _blur_proxy(img: np.ndarray) -> float:
+    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if img.ndim == 3 else img
+    return float(cv2.Laplacian(gray, cv2.CV_64F).var())
+
+
+def _illumination_delta(a: np.ndarray, b: np.ndarray) -> float:
+    ga = cv2.cvtColor(a, cv2.COLOR_BGR2GRAY) if a.ndim == 3 else a
+    gb = cv2.cvtColor(b, cv2.COLOR_BGR2GRAY) if b.ndim == 3 else b
+    ma, mb = float(np.mean(ga)), float(np.mean(gb))
+    return abs(ma - mb) / 255.0
+
+
+@app.post("/match")
+async def match_endpoint(
+    job_id: str | None = Form(None),
+    engine: str = Form("akaze"),
+    source_index: int = Form(1),
+    allow_fallback: bool = Form(True),
+    file_a: UploadFile | None = File(None),
+    file_b: UploadFile | None = File(None),
+) -> dict[str, Any]:
+    """AI/classical matcher router.
+
+    Prefer job_id (CLAHE-enhanced pair) or upload file_a/file_b.
+    Never fabricates AI results — unavailable engines return status=unavailable
+    unless allow_fallback=true (then AKAZE baseline is used and labeled).
+    """
+    ref: np.ndarray | None = None
+    src: np.ndarray | None = None
+    meta: dict[str, Any] = {"input_mode": "unknown"}
+
+    if file_a is not None and file_b is not None:
+        ref = _decode(await file_a.read())
+        src = _decode(await file_b.read())
+        meta["input_mode"] = "uploaded_pair"
+        meta["input_data_status"] = "real uploaded image"
+    elif job_id:
+        job = JOBS.get(job_id)
+        if not job:
+            raise HTTPException(404, "Unknown job — upload or load demo again.")
+        ref_i = int(job["reference_index"])
+        enhanced = job.get("enhanced_paths") or job["paths"]
+        if source_index < 0 or source_index >= len(enhanced):
+            raise HTTPException(400, "Invalid source_index")
+        ref = cv2.imread(enhanced[ref_i])
+        src = cv2.imread(enhanced[source_index])
+        meta["input_mode"] = "job"
+        meta["job_id"] = job_id
+        meta["input_data_status"] = (
+            "illustrative demo imagery" if str(job.get("message", "")).lower().find("demo") >= 0 else "job imagery"
+        )
+        if job.get("demo"):
+            meta["input_data_status"] = "illustrative / sample demo imagery"
+    else:
+        raise HTTPException(400, "Provide job_id or file_a + file_b")
+
+    if ref is None or src is None:
+        raise HTTPException(400, "Could not read input images")
+
+    match = match_images(ref, src, engine=engine, allow_fallback=allow_fallback)  # type: ignore[arg-type]
+    payload = {
+        **match,
+        **meta,
+        "engine_catalog": list_engines(),
+        "blur_proxy_ref": round(_blur_proxy(ref), 2),
+        "blur_proxy_src": round(_blur_proxy(src), 2),
+        "illumination_delta": round(_illumination_delta(ref, src), 4),
+        "resolution_ratio": round(
+            (ref.shape[1] * ref.shape[0]) / max(1, src.shape[1] * src.shape[0]),
+            4,
+        ),
+    }
+    if job_id and match.get("status") in {"ok", "fallback"}:
+        # Persist for subsequent RANSAC like /process/loftr
+        preview = _draw_matches(ref, src, match)
+        unmatched_preview = _draw_unmatched_on_moon(ref, match)
+        out_dir = RESULT_DIR / job_id / "loftr"
+        _save(out_dir / "matches.png", preview)
+        _save(out_dir / "unmatched.png", unmatched_preview)
+        payload["preview_url"] = f"/results/{job_id}/loftr/matches.png"
+        payload["unmatched_preview_url"] = f"/results/{job_id}/loftr/unmatched.png"
+        job = JOBS.get(job_id)
+        if job:
+            ref_i = int(job["reference_index"])
+            results = job.get("results", {})
+            results["loftr"] = {**payload, "reference_index": ref_i, "source_index": source_index}
+            JOBS.update(
+                job_id,
+                stage="loftr_done",
+                progress=0.65,
+                message=f"Matching complete ({payload.get('engine')})",
+                results=results,
+                match_payload=results["loftr"],
+                pair=(ref_i, source_index),
+            )
+    return payload
+
+
 @app.post("/upload")
 async def upload(files: list[UploadFile] = File(...), reference_index: int = Form(0)) -> dict[str, Any]:
     if not files:
@@ -292,14 +397,19 @@ async def process_clahe(job_id: str = Form(...)) -> dict[str, Any]:
 
 
 @app.post("/process/loftr")
-async def process_loftr(job_id: str = Form(...), source_index: int = Form(1)) -> dict[str, Any]:
+async def process_loftr(
+    job_id: str = Form(...),
+    source_index: int = Form(1),
+    engine: str = Form("akaze"),
+    allow_fallback: bool = Form(True),
+) -> dict[str, Any]:
     job = JOBS.get(job_id)
     if not job:
         raise HTTPException(
             404,
             "Unknown job — the server may have restarted. Please upload images or load the demo pair again.",
         )
-    JOBS.update(job_id, stage="loftr", progress=0.4, message="Finding matching points…")
+    JOBS.update(job_id, stage="loftr", progress=0.4, message=f"Finding matching points ({engine})…")
     ref_i = int(job["reference_index"])
     enhanced = job.get("enhanced_paths") or job["paths"]
     if source_index < 0 or source_index >= len(enhanced):
@@ -308,7 +418,13 @@ async def process_loftr(job_id: str = Form(...), source_index: int = Form(1)) ->
     src = cv2.imread(enhanced[source_index])
     if ref is None or src is None:
         raise HTTPException(400, "Could not read CLAHE images")
-    match = run_loftr_style(ref, src)
+    match = match_images(ref, src, engine=engine, allow_fallback=allow_fallback)  # type: ignore[arg-type]
+    if match.get("status") == "unavailable":
+        raise HTTPException(
+            503,
+            match.get("error")
+            or f"Matcher engine '{engine}' unavailable. Install requirements-ai.txt or use AKAZE.",
+        )
     preview = _draw_matches(ref, src, match)
     unmatched_preview = _draw_unmatched_on_moon(ref, match)
     out_dir = RESULT_DIR / job_id / "loftr"
@@ -320,6 +436,13 @@ async def process_loftr(job_id: str = Form(...), source_index: int = Form(1)) ->
         "unmatched_preview_url": f"/results/{job_id}/loftr/unmatched.png",
         "reference_index": ref_i,
         "source_index": source_index,
+        "blur_proxy_ref": round(_blur_proxy(ref), 2),
+        "blur_proxy_src": round(_blur_proxy(src), 2),
+        "illumination_delta": round(_illumination_delta(ref, src), 4),
+        "resolution_ratio": round(
+            (ref.shape[1] * ref.shape[0]) / max(1, src.shape[1] * src.shape[0]),
+            4,
+        ),
     }
     results = job.get("results", {})
     results["loftr"] = payload
@@ -356,6 +479,21 @@ async def process_ransac(job_id: str = Form(...)) -> dict[str, Any]:
     _save(out_dir / "warped.png", ransac["warped"])
     _save(out_dir / "overlay.png", ransac["overlay"])
     _save(out_dir / "tint_overlay.png", ransac["tint_overlay"])
+    reliability = score_registration(
+        raw_match_count=int(match.get("num_matches") or len(match.get("mkpts0") or [])),
+        inlier_count=int(ransac["inlier_count"]),
+        inlier_ratio=float(ransac["inlier_ratio"]),
+        rmse_px=float(ransac["rmse_px"]),
+        spatial_coverage=float(ransac["spatial_coverage"]),
+        mkpts0=match.get("mkpts0") or [],
+        image_width=int(ref.shape[1]),
+        image_height=int(ref.shape[0]),
+        illumination_delta=match.get("illumination_delta"),
+        resolution_ratio=match.get("resolution_ratio"),
+        blur_proxy=min(float(match.get("blur_proxy_ref") or 0), float(match.get("blur_proxy_src") or 0))
+        if match.get("blur_proxy_ref") is not None
+        else None,
+    )
     payload = {
         "H": ransac["H"].tolist(),
         "inlier_ratio": ransac["inlier_ratio"],
@@ -369,6 +507,12 @@ async def process_ransac(job_id: str = Form(...)) -> dict[str, Any]:
         "overlay_url": f"/results/{job_id}/ransac/overlay.png",
         "tint_overlay_url": f"/results/{job_id}/ransac/tint_overlay.png",
         "conclusion": ransac["conclusion"],
+        "reliability": reliability,
+        "engine": match.get("engine", "akaze"),
+        "matcher": match.get("matcher"),
+        "fallback_used": bool(match.get("fallback_used")),
+        "runtime_ms_match": match.get("runtime_ms"),
+        "raw_match_count": int(match.get("num_matches") or len(match.get("mkpts0") or [])),
     }
     results = job.get("results", {})
     results["ransac"] = payload
@@ -423,6 +567,8 @@ if FRONTEND_DIST.is_dir():
             "results",
             "samples",
             "api",
+            "match",
+            "matchers",
         )
         if full_path.startswith(blocked):
             raise HTTPException(404, "Not found")

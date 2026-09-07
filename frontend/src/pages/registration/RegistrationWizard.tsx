@@ -3,8 +3,16 @@ import { Info } from "lucide-react";
 import { GlassCard } from "../../components/GlassCard";
 import { RocketLoader } from "../../components/RocketLoader";
 import { BeforeAfterSlider } from "../../components/BeforeAfterSlider";
-import { apiHealth, loadDemo, runClahe, runLoftr, runRansac, uploadImages } from "../../api/client";
+import { apiHealth, listMatchers, loadDemo, runClahe, runLoftr, runRansac, uploadImages } from "../../api/client";
 import { useAppStore } from "../../store/appStore";
+import { ModelSelector } from "../../components/mission/ModelSelector";
+import { LineagePanel } from "../../components/mission/LineagePanel";
+import { ReliabilityPanel } from "../../components/mission/ReliabilityPanel";
+import { LunaGuidePanel } from "../../components/mission/LunaGuidePanel";
+import { ExperimentDrawer } from "../../components/mission/ExperimentDrawer";
+import { ProcessingStatus } from "../../components/mission/ProcessingStatus";
+import { exportAllRunsJson, exportRunJson, loadRuns, newRunId, saveRun } from "../../lib/mission/runHistory";
+import type { LineageStep, MatcherEngine, MatcherEngineInfo, RunRecord } from "../../lib/mission/types";
 
 type Stage = "select" | "clahe" | "loftr" | "ransac" | "done";
 
@@ -13,7 +21,7 @@ const CLAHE_TIPS = [
   "Bonus tip: Unlike global equalization, CLAHE clips the histogram first so flat terrain noise is not over-amplified.",
 ];
 const LOFTR_TIPS = [
-  "Bonus tip: Stage 2 uses an AKAZE + Lowe-ratio correspondence adapter (LoFTR-ready interface when GPU weights are available).",
+  "Bonus tip: Choose AKAZE (classical) or optional AI engines — unavailable AI models never invent matches.",
   "Bonus tip: Low-confidence tiles usually mean deep shadow, missing overlap, or textureless mare.",
 ];
 const RANSAC_TIPS = [
@@ -79,6 +87,16 @@ export function RegistrationWizard() {
   const [showHInfo, setShowHInfo] = useState(false);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const dragDepth = useRef<Record<number, number>>({});
+  const [engine, setEngine] = useState<MatcherEngine>("akaze");
+  const [engines, setEngines] = useState<MatcherEngineInfo[]>([]);
+  const [enginesLoading, setEnginesLoading] = useState(true);
+  const [lineageOpen, setLineageOpen] = useState(true);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [runs, setRuns] = useState<RunRecord[]>(() => loadRuns());
+  const [selectedRunIds, setSelectedRunIds] = useState<string[]>([]);
+  const [processStep, setProcessStep] = useState(0);
+  const [inputDataStatus, setInputDataStatus] = useState("awaiting input");
+  const guideRef = useRef<HTMLDivElement | null>(null);
 
   const ready = useMemo(() => files.every(Boolean), [files]);
   const [apiOnline, setApiOnline] = useState<boolean | null>(null);
@@ -88,8 +106,164 @@ export function RegistrationWizard() {
     void apiHealth().then((ok) => {
       if (!cancelled) setApiOnline(ok);
     });
+    void listMatchers()
+      .then((res) => {
+        if (!cancelled) setEngines(res.engines as MatcherEngineInfo[]);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setEngines([
+            {
+              engine: "akaze",
+              label: "Classical Baseline",
+              ui_label: "AKAZE",
+              description: "Always available",
+              available: true,
+              status: "available",
+            },
+            {
+              engine: "superpoint-lightglue",
+              label: "AI Fast",
+              ui_label: "SuperPoint + LightGlue",
+              description: "Optional",
+              available: false,
+              status: "unavailable",
+            },
+            {
+              engine: "loftr",
+              label: "AI Robust",
+              ui_label: "LoFTR",
+              description: "Optional",
+              available: false,
+              status: "unavailable",
+            },
+          ]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setEnginesLoading(false);
+      });
     return () => {
       cancelled = true;
+    };
+  }, []);
+
+  const lineageSteps: LineageStep[] = useMemo(() => {
+    const matchDetail =
+      loftr?.fallback_used
+        ? `Fallback used → ${loftr.engine ?? "akaze"}`
+        : loftr
+          ? `${loftr.engine ?? engine} · ${loftr.num_matches} matches`
+          : engine;
+    return [
+      { id: "input", label: "Input", status: files.some(Boolean) || jobId ? "done" : "pending", detail: inputDataStatus },
+      { id: "pre", label: "Preprocessing (CLAHE)", status: clahe ? "done" : stage === "clahe" && busy ? "active" : "pending" },
+      {
+        id: "model",
+        label: "Model matching",
+        status: loftr ? "done" : stage === "loftr" && busy ? "active" : "pending",
+        detail: matchDetail,
+      },
+      {
+        id: "geom",
+        label: "Geometry verification (RANSAC)",
+        status: ransac ? "done" : stage === "ransac" && busy ? "active" : "pending",
+      },
+      {
+        id: "audit",
+        label: "Confidence audit",
+        status: ransac?.reliability ? "done" : stage === "done" ? "active" : "pending",
+        detail: ransac?.reliability?.trust_label,
+      },
+      {
+        id: "out",
+        label: "Output",
+        status: stage === "done" && ransac ? "done" : "pending",
+        detail: stage === "done" ? "Overlay + metrics + experiment record" : undefined,
+      },
+    ];
+  }, [busy, clahe, engine, files, inputDataStatus, jobId, loftr, ransac, stage]);
+
+  const recordExperiment = (match: NonNullable<typeof loftr>, geom: NonNullable<typeof ransac>, jid: string) => {
+    const run: RunRecord = {
+      id: newRunId(),
+      timestamp: new Date().toISOString(),
+      inputPair: {
+        jobId: jid,
+        sourceIndex: Math.min(1, count - 1),
+        inputDataStatus,
+        count,
+      },
+      engineRequested: engine,
+      engineUsed: (geom.engine || match.engine || engine) as string,
+      fallbackUsed: Boolean(geom.fallback_used || match.fallback_used),
+      preprocessing: { clahe: true },
+      ransacParams: { reprojThresholdPx: 3, note: "OpenCV RANSAC default threshold in pipeline" },
+      matchStats: {
+        rawMatches: geom.raw_match_count ?? match.num_matches,
+        meanConfidence: match.matched_mean_confidence ?? match.mean_confidence,
+        runtimeMs: match.runtime_ms ?? geom.runtime_ms_match,
+        matcherLabel: match.matcher,
+      },
+      metrics: {
+        inlierCount: geom.inlier_count,
+        inlierRatio: geom.inlier_ratio,
+        rmsePx: geom.rmse_px,
+        spatialCoverage: geom.spatial_coverage,
+        rotationDeg: geom.rotation_deg,
+        scale: geom.scale,
+      },
+      quality: geom.reliability
+        ? {
+            score: geom.reliability.score,
+            trust_label: geom.reliability.trust_label,
+            reasons: geom.reliability.reasons,
+            limitation: geom.reliability.limitation,
+          }
+        : null,
+      outputStatus: "complete",
+      previewUrls: {
+        matches: match.preview_url,
+        unmatched: match.unmatched_preview_url,
+        overlay: geom.overlay_url,
+        tint: geom.tint_overlay_url,
+      },
+    };
+    setRuns(saveRun(run));
+  };
+
+  useEffect(() => {
+    const onEngine = (ev: Event) => {
+      const detail = (ev as CustomEvent<string>).detail;
+      if (detail === "akaze" || detail === "superpoint-lightglue" || detail === "loftr") {
+        setEngine(detail);
+        setStage("select");
+      }
+    };
+    const onHistory = () => setHistoryOpen(true);
+    const onExplain = () => {
+      setHistoryOpen(false);
+      window.setTimeout(() => guideRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 50);
+    };
+    const onExport = () => {
+      const latest = loadRuns()[0];
+      if (latest) exportRunJson(latest);
+      else {
+        const all = loadRuns();
+        if (all.length) exportAllRunsJson(all);
+        else setError("No experiment runs to export yet — complete Register through RANSAC first.");
+      }
+      setHistoryOpen(true);
+    };
+    document.addEventListener("lunamatch:engine", onEngine as EventListener);
+    document.addEventListener("lunamatch:open-history", onHistory);
+    document.addEventListener("lunamatch:explain", onExplain);
+    document.addEventListener("lunamatch:export", onExport);
+    return () => {
+      document.removeEventListener("lunamatch:engine", onEngine as EventListener);
+      document.removeEventListener("lunamatch:open-history", onHistory);
+      document.removeEventListener("lunamatch:explain", onExplain);
+      document.removeEventListener("lunamatch:export", onExport);
     };
   }, []);
 
@@ -154,6 +328,8 @@ export function RegistrationWizard() {
   const startDemo = async () => {
     setBusy(true);
     setError(null);
+    setProcessStep(0);
+    setInputDataStatus("illustrative / sample demo imagery");
     try {
       const demo = await loadDemo();
       setApiOnline(true);
@@ -166,8 +342,10 @@ export function RegistrationWizard() {
         Array.from({ length: demo.count }, (_, i) => new File([`demo-${i}`], `demo_${i + 1}.png`, { type: "image/png" })),
       );
       setStage("clahe");
+      setProcessStep(0);
       const result = await runClahe(demo.job_id);
       setClahe(result);
+      setProcessStep(1);
     } catch (e) {
       setApiOnline(false);
       setError(e instanceof Error ? e.message : "Demo failed");
@@ -181,6 +359,8 @@ export function RegistrationWizard() {
     if (!ready) return;
     setBusy(true);
     setError(null);
+    setProcessStep(0);
+    setInputDataStatus("real uploaded image");
     try {
       const uploaded = await uploadImages(files.filter(Boolean) as File[], 0);
       setJobId(uploaded.job_id);
@@ -188,6 +368,7 @@ export function RegistrationWizard() {
       setStage("clahe");
       const result = await runClahe(uploaded.job_id);
       setClahe(result);
+      setProcessStep(1);
     } catch (e) {
       const msg = e instanceof Error ? e.message : "Upload failed";
       setError(
@@ -206,8 +387,11 @@ export function RegistrationWizard() {
     setStage("loftr");
     setBusy(true);
     setError(null);
+    setProcessStep(1);
     try {
-      setLoftr(await runLoftr(jobId, Math.min(1, count - 1)));
+      const matchResult = await runLoftr(jobId, Math.min(1, count - 1), engine, true);
+      setLoftr(matchResult);
+      setProcessStep(2);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Matching failed");
     } finally {
@@ -220,8 +404,12 @@ export function RegistrationWizard() {
     setStage("ransac");
     setBusy(true);
     setError(null);
+    setProcessStep(2);
     try {
-      setRansac(await runRansac(jobId));
+      const geom = await runRansac(jobId);
+      setRansac(geom);
+      setProcessStep(4);
+      if (loftr) recordExperiment(loftr, geom, jobId);
       setStage("done");
     } catch (e) {
       setError(e instanceof Error ? e.message : "RANSAC failed");
@@ -234,6 +422,8 @@ export function RegistrationWizard() {
   const skipToFullDemo = async () => {
     setBusy(true);
     setError(null);
+    setInputDataStatus("illustrative / sample demo imagery");
+    setProcessStep(0);
     try {
       const demo = await loadDemo();
       setApiOnline(true);
@@ -247,12 +437,16 @@ export function RegistrationWizard() {
       setStage("clahe");
       const claheResult = await runClahe(demo.job_id);
       setClahe(claheResult);
+      setProcessStep(1);
       setStage("loftr");
-      const matchResult = await runLoftr(demo.job_id, Math.min(1, demo.count - 1));
+      const matchResult = await runLoftr(demo.job_id, Math.min(1, demo.count - 1), engine, true);
       setLoftr(matchResult);
+      setProcessStep(2);
       setStage("ransac");
       const ransacResult = await runRansac(demo.job_id);
       setRansac(ransacResult);
+      setProcessStep(4);
+      recordExperiment(matchResult, ransacResult, demo.job_id);
       setStage("done");
     } catch (e) {
       setApiOnline(false);
@@ -263,15 +457,38 @@ export function RegistrationWizard() {
     }
   };
 
+  const reproduceRun = (run: RunRecord) => {
+    setEngine((run.engineRequested || "akaze") as MatcherEngine);
+    setHistoryOpen(false);
+    setError(null);
+    setStage("select");
+  };
+
   return (
     <div className="page space-y-6">
       <GlassCard>
-        <p className="kicker">Option A · Core PS flow</p>
-        <h1 className="mt-2 text-3xl font-semibold">Image Registration Wizard</h1>
-        <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--muted)]">
-          CLAHE → correspondence matching → RANSAC, with animations and plain-language diagnostics.
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="kicker">Option A · Core PS flow · mission intelligence</p>
+            <h1 className="mt-2 text-3xl font-semibold">Image Registration Wizard</h1>
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--muted)]">
+              CLAHE → correspondence matching → RANSAC, with evidence panels and experiment tracking.
+            </p>
+          </div>
+          <button type="button" className="btn btn-secondary !min-h-9 text-xs" onClick={() => setHistoryOpen(true)}>
+            Experiment history
+          </button>
+        </div>
       </GlassCard>
+
+      <LineagePanel
+        steps={lineageSteps}
+        inputDataStatus={inputDataStatus}
+        open={lineageOpen}
+        onToggle={() => setLineageOpen((v) => !v)}
+      />
+
+      <ProcessingStatus active={busy} stepIndex={processStep} />
 
       {apiOnline === false && !error ? (
         <div className="rounded-2xl border border-[color-mix(in_srgb,var(--danger)_45%,transparent)] bg-[color-mix(in_srgb,var(--danger)_12%,transparent)] p-4 text-sm text-[var(--danger)]">
@@ -361,6 +578,13 @@ export function RegistrationWizard() {
               Skip
             </button>
           </div>
+          <ModelSelector
+            engines={engines}
+            value={engine}
+            onChange={setEngine}
+            loading={enginesLoading}
+            fallbackUsed={Boolean(loftr?.fallback_used && loftr.requested_engine === engine)}
+          />
         </GlassCard>
       ) : null}
 
@@ -381,6 +605,13 @@ export function RegistrationWizard() {
               </div>
             ))}
           </div>
+          <ModelSelector
+            engines={engines}
+            value={engine}
+            onChange={setEngine}
+            loading={enginesLoading}
+            fallbackUsed={Boolean(loftr?.fallback_used && loftr.requested_engine === engine)}
+          />
           <button type="button" className="btn btn-primary" onClick={() => void goLoftr()}>Next · Find matches</button>
         </GlassCard>
       ) : null}
@@ -395,7 +626,7 @@ export function RegistrationWizard() {
               <span className="mr-3 inline-flex items-center gap-1.5"><span className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-400" /> Green = matched</span>
               <span className="inline-flex items-center gap-1.5"><span className="inline-block h-2.5 w-2.5 rounded-full bg-red-500" /> Red = unmatched</span>
             </p>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
               <Metric
                 label="Total keypoints"
                 value={String(loftr.total_keypoints_evaluated ?? (loftr.num_matches + (loftr.num_unmatched ?? 0)))}
@@ -404,7 +635,7 @@ export function RegistrationWizard() {
               <Metric
                 label="Matched (green)"
                 value={String(loftr.num_matches)}
-                tip="Keypoints that passed the Lowe ratio test — shown in green."
+                tip="Raw correspondences from the selected engine (or AKAZE fallback)."
               />
               <Metric
                 label="Matched confidence"
@@ -412,11 +643,30 @@ export function RegistrationWizard() {
                 tip="Mean confidence of matched (green) keypoints only — unmatched/red points are excluded from this average."
               />
               <Metric
-                label="Matcher"
-                value="AKAZE + ratio"
-                tip={loftr.matcher || "AKAZE + Lowe ratio correspondence adapter (LoFTR-ready interface)."}
+                label="Runtime"
+                value={loftr.runtime_ms != null ? `${loftr.runtime_ms.toFixed(0)} ms` : "—"}
+                tip="Matcher wall time on the server for this pair."
+              />
+              <Metric
+                label="Requested engine"
+                value={String(loftr.requested_engine ?? engine)}
+                tip="Engine selected in the UI before matching."
+              />
+              <Metric
+                label="Engine used"
+                value={String(loftr.engine ?? "akaze")}
+                tip={
+                  loftr.fallback_used
+                    ? `Fallback used. ${loftr.fallback_reason || loftr.matcher}`
+                    : loftr.matcher || "AKAZE + Lowe ratio classical baseline"
+                }
               />
             </div>
+            {loftr.fallback_used ? (
+              <p className="rounded-xl border border-[color-mix(in_srgb,var(--warn)_45%,transparent)] px-3 py-2 text-xs text-[var(--warn)]">
+                Fallback used — requested AI engine was unavailable; classical AKAZE baseline ran instead.
+              </p>
+            ) : null}
             <div className="rounded-2xl border border-[var(--border)] p-4">
               <p className="kicker">Why is confidence low?</p>
               <div className="mt-3 space-y-3">
@@ -556,6 +806,32 @@ export function RegistrationWizard() {
             <p className="text-xs leading-5 text-[var(--muted)]">
               Guide values are reference levels for reading RMSE. Your measured inlier reprojection error is highlighted.
             </p>
+            <ReliabilityPanel reliability={ransac.reliability ?? null} />
+            <div ref={guideRef}>
+              <LunaGuidePanel
+                rmsePx={ransac.rmse_px}
+                reliability={ransac.reliability ?? null}
+                rawMatches={ransac.raw_match_count ?? loftr?.num_matches}
+                inlierRatio={ransac.inlier_ratio}
+                coverage={ransac.spatial_coverage}
+                fallbackUsed={Boolean(ransac.fallback_used || loftr?.fallback_used)}
+                engine={engine}
+                runA={runs.find((r) => r.id === selectedRunIds[0]) ?? null}
+                runB={runs.find((r) => r.id === selectedRunIds[1]) ?? null}
+              />
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3 text-xs text-[var(--muted)]">
+              <div className="rounded-xl border border-[var(--border)] p-3">
+                Runtime match {loftr?.runtime_ms != null ? `${loftr.runtime_ms.toFixed(0)} ms` : "—"}
+              </div>
+              <div className="rounded-xl border border-[var(--border)] p-3">
+                Raw matches {ransac.raw_match_count ?? loftr?.num_matches ?? "—"}
+              </div>
+              <div className="rounded-xl border border-[var(--border)] p-3">
+                Engine {ransac.engine ?? loftr?.engine ?? engine}
+                {ransac.fallback_used || loftr?.fallback_used ? " · fallback" : ""}
+              </div>
+            </div>
             <div className="flex flex-wrap gap-3">
               <button
                 type="button"
@@ -583,10 +859,28 @@ export function RegistrationWizard() {
               >
                 Download unmatched spots
               </button>
+              <button type="button" className="btn btn-secondary" onClick={() => setHistoryOpen(true)}>
+                Compare runs
+              </button>
             </div>
           </GlassCard>
         </div>
       ) : null}
+
+      <ExperimentDrawer
+        open={historyOpen}
+        onClose={() => setHistoryOpen(false)}
+        runs={runs}
+        selectedIds={selectedRunIds}
+        onToggleSelect={(id) =>
+          setSelectedRunIds((prev) => {
+            if (prev.includes(id)) return prev.filter((x) => x !== id);
+            if (prev.length >= 2) return [prev[1]!, id];
+            return [...prev, id];
+          })
+        }
+        onReproduce={reproduceRun}
+      />
     </div>
   );
 }

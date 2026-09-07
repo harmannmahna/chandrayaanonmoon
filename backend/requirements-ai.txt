@@ -1,0 +1,15 @@
+# Optional AI matcher dependencies (not required for classical AKAZE baseline).
+# CPU wheels are large; install only when enabling AI Fast / AI Robust engines.
+#
+# Setup:
+#   cd backend
+#   source .venv/bin/activate
+#   pip install -r requirements-ai.txt
+#   uvicorn main:app --host 0.0.0.0 --port 8000
+#
+# Then GET /matchers should report superpoint-lightglue / loftr as available
+# (first LoFTR run may download outdoor weights). Until installed, Register UI
+# shows Unavailable and may fall back to labeled AKAZE — never fabricated AI matches.
+
+torch>=2.2.0
+kornia>=0.7.2
