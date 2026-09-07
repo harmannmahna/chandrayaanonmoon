@@ -16,7 +16,7 @@ export function IceContextPage() {
             Open LUNA/ICE
           </Link>
           <Link to="/register" className="btn btn-secondary">
-            LUNA/REGISTER
+            Register
           </Link>
         </div>
       </GlassCard>

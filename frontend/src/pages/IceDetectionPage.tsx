@@ -35,7 +35,7 @@ import {
 type Stage = "select" | "enhance" | "mission";
 
 const STAGE1_TIPS = [
-  "Upload optical frames of your lunar patch, or load the demo pair — same bridge as LUNA/REGISTER.",
+  "Upload optical frames of your lunar patch, or load the demo pair — same bridge as Register.",
   "Stage 3 radar layers use an illustrative doubly-shadowed crater grid (not calibrated DFSAR).",
 ];
 const STAGE2_TIPS = [
@@ -335,7 +335,7 @@ export function IceDetectionPage() {
               How to demo
             </button>
             <Link to="/register" className="btn btn-secondary !min-h-9 !px-3 text-xs">
-              LUNA/REGISTER
+              Register
             </Link>
           </div>
         </div>
