@@ -38,10 +38,12 @@ export function BeforeAfterSlider({
       onPointerUp={() => setDragging(false)}
       onPointerCancel={() => setDragging(false)}
     >
-      <img src={beforeSrc} alt={beforeLabel} className="pointer-events-none absolute inset-0 h-full w-full object-cover grayscale" draggable={false} />
+      {/* Enhanced fills the frame — visible on the right of the handle */}
+      <img src={afterSrc} alt={afterLabel} className="pointer-events-none absolute inset-0 h-full w-full object-cover grayscale" draggable={false} />
+      {/* Original clipped to the left of the handle */}
       <img
-        src={afterSrc}
-        alt={afterLabel}
+        src={beforeSrc}
+        alt={beforeLabel}
         className="pointer-events-none absolute inset-0 h-full w-full object-cover grayscale"
         style={{ clipPath: clip }}
         draggable={false}

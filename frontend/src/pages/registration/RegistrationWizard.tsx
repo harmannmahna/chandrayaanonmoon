@@ -315,7 +315,7 @@ export function RegistrationWizard() {
           <div className="grid gap-4 md:grid-cols-2">
             {clahe.images.map((src, i) => (
               <div key={src}>
-                <BeforeAfterSlider beforeSrc={clahe.originals[i]} afterSrc={clahe.originals[i]} />
+                <BeforeAfterSlider beforeSrc={clahe.originals[i]} afterSrc={src} />
                 <p className="mt-2 text-xs text-[var(--muted)]">{clahe.notes[i]?.note}</p>
               </div>
             ))}

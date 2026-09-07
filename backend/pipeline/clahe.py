@@ -15,8 +15,12 @@ def _local_contrast(gray: np.ndarray, win: int = 16) -> float:
     return float(np.mean(np.sqrt(var)))
 
 
-def run_clahe(img: np.ndarray, clip_limit: float = 3.5, tile: int = 8) -> tuple[np.ndarray, dict[str, Any]]:
-    """Contrast Limited Adaptive Histogram Equalization on luminance channel."""
+def run_clahe(img: np.ndarray, clip_limit: float = 6.0, tile: int = 8) -> tuple[np.ndarray, dict[str, Any]]:
+    """Contrast Limited Adaptive Histogram Equalization on luminance channel.
+
+    Default clip_limit is strong enough that Stage 1 'Enhanced' looks clearly
+    brighter/crisper than 'Original' in the before/after slider.
+    """
     if img.ndim == 2:
         gray = img.copy()
         lab = None
@@ -26,6 +30,10 @@ def run_clahe(img: np.ndarray, clip_limit: float = 3.5, tile: int = 8) -> tuple[
 
     clahe = cv2.createCLAHE(clipLimit=clip_limit, tileGridSize=(tile, tile))
     enhanced_l = clahe.apply(gray)
+
+    # Mild unsharp mask so crater rims pop without inventing texture
+    blur = cv2.GaussianBlur(enhanced_l, (0, 0), 1.2)
+    enhanced_l = cv2.addWeighted(enhanced_l, 1.35, blur, -0.35, 0)
 
     if lab is None:
         out = enhanced_l
@@ -48,7 +56,7 @@ def run_clahe(img: np.ndarray, clip_limit: float = 3.5, tile: int = 8) -> tuple[
         "edge_pixels_before": edge_before_n,
         "edge_pixels_after": edge_after_n,
         "note": (
-            f"Local contrast gain ×{gain:.2f}. "
+            f"CLAHE enhanced · local contrast gain ×{gain:.2f}. "
             f"Visible edge pixels {edge_before_n} → {edge_after_n}."
         ),
     }
