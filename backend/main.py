@@ -569,6 +569,7 @@ if FRONTEND_DIST.is_dir():
             "api",
             "match",
             "matchers",
+            "v1",
         )
         if full_path.startswith(blocked):
             raise HTTPException(404, "Not found")

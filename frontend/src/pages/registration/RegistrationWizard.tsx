@@ -11,8 +11,19 @@ import { ReliabilityPanel } from "../../components/mission/ReliabilityPanel";
 import { LunaGuidePanel } from "../../components/mission/LunaGuidePanel";
 import { ExperimentDrawer } from "../../components/mission/ExperimentDrawer";
 import { ProcessingStatus } from "../../components/mission/ProcessingStatus";
+import { PlatformProjectBar } from "../../components/mission/PlatformProjectBar";
 import { exportAllRunsJson, exportRunJson, loadRuns, newRunId, saveRun } from "../../lib/mission/runHistory";
 import type { LineageStep, MatcherEngine, MatcherEngineInfo, RunRecord } from "../../lib/mission/types";
+import {
+  getRegistrationResults,
+  getRegistrationRun,
+  pollUntil,
+  startRegistrationRun,
+  uploadDatasetFile,
+  createExport,
+  getExport,
+  type AnalysisRun,
+} from "../../api/platform";
 
 type Stage = "select" | "clahe" | "loftr" | "ransac" | "done";
 
@@ -74,6 +85,8 @@ function isImageFile(file: File | undefined | null): file is File {
 
 export function RegistrationWizard() {
   const setLastRegistrationJobId = useAppStore((s) => s.setLastRegistrationJobId);
+  const workspaceMode = useAppStore((s) => s.workspaceMode);
+  const projectId = useAppStore((s) => s.projectId);
   const [count, setCount] = useState(2);
   const [files, setFiles] = useState<(File | null)[]>([null, null]);
   const [previews, setPreviews] = useState<(string | null)[]>([null, null]);
@@ -96,6 +109,7 @@ export function RegistrationWizard() {
   const [selectedRunIds, setSelectedRunIds] = useState<string[]>([]);
   const [processStep, setProcessStep] = useState(0);
   const [inputDataStatus, setInputDataStatus] = useState("awaiting input");
+  const [serverRun, setServerRun] = useState<AnalysisRun | null>(null);
   const guideRef = useRef<HTMLDivElement | null>(null);
 
   const ready = useMemo(() => files.every(Boolean), [files]);
@@ -325,12 +339,160 @@ export function RegistrationWizard() {
     onFile(index, image);
   };
 
+  const mapEngineForPlatform = (e: MatcherEngine) => e.replace(/-/g, "_");
+
+  const runPlatformRegistration = async (pair: File[], dataStatus: string) => {
+    if (!projectId) throw new Error("Create or select a platform project first.");
+    setInputDataStatus(dataStatus);
+    setProcessStep(0);
+    setStage("loftr");
+    const refDs = await uploadDatasetFile(projectId, pair[0]!, { dataStatus });
+    setProcessStep(1);
+    const srcDs = await uploadDatasetFile(projectId, pair[1]!, { dataStatus });
+    setProcessStep(1);
+    const run = await startRegistrationRun({
+      project_id: projectId,
+      reference_dataset_id: refDs.id,
+      source_dataset_id: srcDs.id,
+      engine: mapEngineForPlatform(engine),
+      allow_fallback: true,
+    });
+    setServerRun(run);
+    setJobId(run.id);
+    setLastRegistrationJobId(run.id);
+    setProcessStep(2);
+    const finished = await pollUntil(
+      async () => {
+        const r = await getRegistrationRun(run.id);
+        setServerRun(r);
+        if (r.status === "preprocessing") setProcessStep(0);
+        if (r.status === "matching") setProcessStep(1);
+        if (r.status === "ransac") setProcessStep(2);
+        if (r.status === "refinement") setProcessStep(3);
+        if (r.status === "exporting") setProcessStep(4);
+        return r;
+      },
+      (r) => r.status === "completed" || r.status === "failed" || r.status === "cancelled",
+    );
+    if (finished.status !== "completed") {
+      throw new Error(finished.error || finished.message || `Run ended as ${finished.status}`);
+    }
+    setProcessStep(4);
+    const result = await getRegistrationResults(finished.id);
+    const metrics = result.metrics as {
+      raw_match_count?: number;
+      inlier_count?: number;
+      inlier_ratio?: number;
+      rmse_px?: number;
+      spatial_coverage?: number;
+      rotation_deg?: number;
+      scale?: number;
+      H?: number[][];
+      conclusion?: string;
+    };
+    setLoftr({
+      job_id: finished.id,
+      mkpts0: [],
+      mkpts1: [],
+      mconf: [],
+      num_matches: metrics.raw_match_count ?? 0,
+      mean_confidence: 0,
+      matched_mean_confidence: 0,
+      weak_regions: [],
+      preview_url: result.download_urls.matches || "",
+      unmatched_preview_url: undefined,
+      matcher: result.engine_version,
+      engine: result.engine.replace(/_/g, "-") as MatcherEngine,
+      requested_engine: engine,
+      fallback_used: result.fallback_used,
+      runtime_ms: result.runtime_ms ?? undefined,
+      status: "ok",
+    });
+    setRansac({
+      job_id: finished.id,
+      H: metrics.H ?? [
+        [1, 0, 0],
+        [0, 1, 0],
+        [0, 0, 1],
+      ],
+      inlier_ratio: metrics.inlier_ratio ?? 0,
+      inlier_count: metrics.inlier_count ?? 0,
+      rmse_px: metrics.rmse_px ?? 0,
+      spatial_coverage: metrics.spatial_coverage ?? 0,
+      rotation_deg: metrics.rotation_deg ?? 0,
+      scale: metrics.scale ?? 1,
+      translation_px: [0, 0],
+      warped_url: result.download_urls.warped || "",
+      overlay_url: result.download_urls.overlay || "",
+      tint_overlay_url: result.download_urls.tint_overlay || "",
+      conclusion: metrics.conclusion || "Platform registration complete (pixel RMSE ≠ geodetic accuracy).",
+      reliability: result.reliability as Awaited<ReturnType<typeof runRansac>>["reliability"],
+      engine: result.engine,
+      matcher: result.engine_version,
+      fallback_used: result.fallback_used,
+      runtime_ms_match: result.runtime_ms ?? undefined,
+      raw_match_count: metrics.raw_match_count,
+    });
+    recordExperiment(
+      {
+        job_id: finished.id,
+        mkpts0: [],
+        mkpts1: [],
+        mconf: [],
+        num_matches: metrics.raw_match_count ?? 0,
+        mean_confidence: 0,
+        weak_regions: [],
+        preview_url: result.download_urls.matches || "",
+        matcher: result.engine_version,
+        engine: result.engine,
+        fallback_used: result.fallback_used,
+        runtime_ms: result.runtime_ms ?? undefined,
+      } as Awaited<ReturnType<typeof runLoftr>>,
+      {
+        job_id: finished.id,
+        H: metrics.H ?? [[1, 0, 0], [0, 1, 0], [0, 0, 1]],
+        inlier_ratio: metrics.inlier_ratio ?? 0,
+        inlier_count: metrics.inlier_count ?? 0,
+        rmse_px: metrics.rmse_px ?? 0,
+        spatial_coverage: metrics.spatial_coverage ?? 0,
+        rotation_deg: metrics.rotation_deg ?? 0,
+        scale: metrics.scale ?? 1,
+        translation_px: [0, 0],
+        warped_url: result.download_urls.warped || "",
+        overlay_url: result.download_urls.overlay || "",
+        tint_overlay_url: result.download_urls.tint_overlay || "",
+        conclusion: metrics.conclusion || "",
+        reliability: result.reliability as Awaited<ReturnType<typeof runRansac>>["reliability"],
+        engine: result.engine,
+        fallback_used: result.fallback_used,
+        raw_match_count: metrics.raw_match_count,
+      } as Awaited<ReturnType<typeof runRansac>>,
+      finished.id,
+    );
+    // Kick async export (non-blocking)
+    void createExport(finished.id)
+      .then((exp) => pollUntil(() => getExport(exp.id), (e) => e.status === "completed" || e.status === "failed"))
+      .catch(() => undefined);
+    setStage("done");
+  };
+
   const startDemo = async () => {
     setBusy(true);
     setError(null);
     setProcessStep(0);
     setInputDataStatus("illustrative / sample demo imagery");
     try {
+      if (workspaceMode === "platform") {
+        // Platform still uses legacy demo images as illustrative uploads when available via fetch
+        const demo = await loadDemo();
+        const blobs = await Promise.all(demo.preview_urls.map(async (u) => (await fetch(u)).blob()));
+        const pair = blobs.slice(0, 2).map((b, i) => new File([b], `demo_${i + 1}.png`, { type: "image/png" }));
+        setPreviews(demo.preview_urls);
+        setFiles(pair);
+        setCount(pair.length);
+        await runPlatformRegistration(pair, "illustrative / sample demo imagery");
+        return;
+      }
       const demo = await loadDemo();
       setApiOnline(true);
       setJobId(demo.job_id);
@@ -362,6 +524,10 @@ export function RegistrationWizard() {
     setProcessStep(0);
     setInputDataStatus("real uploaded image");
     try {
+      if (workspaceMode === "platform") {
+        await runPlatformRegistration((files.filter(Boolean) as File[]).slice(0, 2), "real uploaded image");
+        return;
+      }
       const uploaded = await uploadImages(files.filter(Boolean) as File[], 0);
       setJobId(uploaded.job_id);
       setLastRegistrationJobId(uploaded.job_id);
@@ -480,6 +646,8 @@ export function RegistrationWizard() {
           </button>
         </div>
       </GlassCard>
+
+      <PlatformProjectBar serverRun={serverRun} />
 
       <LineagePanel
         steps={lineageSteps}

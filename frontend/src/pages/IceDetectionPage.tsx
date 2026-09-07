@@ -13,6 +13,7 @@ import { planAStarRoute } from "../lib/ice/pathPlanning";
 import { computeIceVolumeScenario, getDefaultScenarios } from "../lib/ice/volumeEstimator";
 import { downloadMissionPackage, gridToPngBlob } from "../lib/ice/exports";
 import { IceLunaGuide } from "../components/mission/IceLunaGuide";
+import { IcePlatformPersist } from "../components/mission/IcePlatformPersist";
 import {
   DEFAULT_ICE_PARAMS,
   DEFAULT_LANDING_PARAMS,
@@ -936,6 +937,37 @@ export function IceDetectionPage() {
               <button type="button" className="btn btn-primary w-full" onClick={() => void exportPackage()}>
                 Download mission package (.zip)
               </button>
+              <IcePlatformPersist
+                thresholds={{ cpr: iceParams.cprThreshold, dop: iceParams.dopThreshold }}
+                clusterMetrics={
+                  selectedCluster
+                    ? { meanCPR: selectedCluster.meanCPR, meanDOP: selectedCluster.meanDOP, id: selectedCluster.id }
+                    : {}
+                }
+                volumeScenarios={{ volumes }}
+                landingCandidates={landings.map((s) => ({
+                  name: s.id,
+                  score: s.score,
+                  metrics: { status: s.status },
+                }))}
+                roverRoutes={
+                  route
+                    ? [
+                        {
+                          name: "planned",
+                          mode: routeParams.mode,
+                          geojson: { type: "Feature", properties: {}, geometry: null },
+                          metrics: {
+                            distanceMeters: route.distanceMeters,
+                            meanSlopeDegrees: route.meanSlopeDegrees,
+                            shadowFraction: route.shadowFraction,
+                            feasibility: route.feasibility,
+                          },
+                        },
+                      ]
+                    : []
+                }
+              />
               <button type="button" className="btn btn-secondary w-full" onClick={() => setStage("enhance")}>
                 Back to enhance
               </button>

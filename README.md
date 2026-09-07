@@ -8,11 +8,11 @@ optical imagery, with an educational ice/traverse planner.
 
 - **Frontend:** React + Vite + TypeScript, Tailwind CSS v4, Framer Motion,
   react-three-fiber + drei
-- **Backend:** FastAPI, OpenCV (CLAHE + RANSAC), MatcherEngine router:
-  - `akaze` — classical AKAZE + Lowe ratio (always available baseline)
-  - `superpoint-lightglue` — optional pretrained SuperPoint + LightGlue (torch/kornia)
-  - `loftr` — optional pretrained LoFTR outdoor (torch/kornia)
-- Mission UX: reliability agent, experiment history, LunaGuide (offline), Ctrl/Cmd+K palette
+- **Backend:** FastAPI (legacy demo + `/api/v1` platform), OpenCV (CLAHE + RANSAC),
+  MatcherEngine router (`akaze` | `superpoint_lightglue` | `loftr`)
+- **Platform (optional Docker):** PostgreSQL/PostGIS, Redis, Celery, MinIO
+- Mission UX: reliability agent, experiment history, LunaGuide (offline), Ctrl/Cmd+K palette,
+  Local demo mode vs Platform mode
 
 ## Features
 
@@ -25,75 +25,54 @@ optical imagery, with an educational ice/traverse planner.
 6. Dark/light mode + ambient soundtrack toggle
 7. AI model selector + Match Reliability Agent + experiment JSON export (Register)
 8. Command palette (`Ctrl/Cmd+K`)
+9. Platform APIs: projects, MinIO uploads, Celery registration jobs, ice persistence, ZIP exports
+   — details: [`docs/PLATFORM.md`](docs/PLATFORM.md)
 
-## Run (recommended — fixes "Failed to fetch")
-
-Use **one server** so the UI and API share the same origin:
+## Run (recommended legacy / single origin)
 
 ```bash
-# Backend (Python 3.11)
 cd backend
 python3.11 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-# build UI once
 (cd ../frontend && npm install && npm run build)
-uvicorn main:app --host 0.0.0.0 --port 8000
+uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-Open **http://127.0.0.1:8000/register** (not only :5173).
+Open **http://127.0.0.1:8000/register**. Legacy disk jobs work without Docker.
+Platform routes need Postgres/Redis/MinIO (see Compose below).
 
-### Optional AI engines
+## Docker Compose (full platform)
 
 ```bash
-cd backend
-source .venv/bin/activate
+cp .env.example .env
+docker compose up --build
+```
+
+| Service | URL |
+|---------|-----|
+| Frontend (nginx) | http://localhost:8080 |
+| API / SPA | http://localhost:8000 |
+| OpenAPI docs | http://localhost:8000/docs |
+| MinIO console | http://localhost:9001 (minioadmin / minioadmin) |
+| Flower (optional) | `docker compose --profile flower up flower` → :5555 |
+
+Migrations: `cd backend && alembic upgrade head` (Compose runs this on API start).
+
+## Optional AI engines
+
+```bash
+cd backend && source .venv/bin/activate
 pip install -r requirements-ai.txt
-# restart uvicorn; check GET /matchers
 ```
 
-Without these deps, AI Fast / AI Robust show **Unavailable**. Matching can fall back to
-**AKAZE** and will be labeled **Fallback used** — results are never silently labeled as LoFTR.
-
-## Quick start
-
-### Backend
-
-```bash
-cd backend
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-uvicorn main:app --reload --host 0.0.0.0 --port 8000
-```
-
-### Frontend
-
-```bash
-cd frontend
-npm install
-npm run dev -- --host 0.0.0.0 --port 5173
-```
-
-Open http://127.0.0.1:5173 — API calls proxy through `/api` to the backend.
-If you open the UI via a LAN/tunnel URL, keep the backend on `0.0.0.0:8000` so the
-browser fallback (`hostname:8000`) works when the Vite proxy is unavailable.
-
-### Backend unit checks
-
-```bash
-cd backend
-source .venv/bin/activate
-python -m pytest tests/test_mission_ai.py -q
-```
+Without these deps, AI engines report **Unavailable** (or labeled AKAZE fallback).
 
 ## Honesty notes
 
-- Default matcher is **AKAZE + Lowe-ratio**, not trained LoFTR. Optional LoFTR / SuperPoint+LightGlue
-  only run when `requirements-ai.txt` is installed and weights load successfully.
-- Demo imagery may be sample crater fields when mission patches are unavailable.
-- RMSE is inlier pixel reprojection error, not lunar geodetic accuracy.
-- Reliability score is an internal explainable quality metric — not independent geodetic accuracy.
-- Ice CPR/DOP maps in the demo planner are illustrative; thresholds demonstrate screening logic.
-- Illumination Lab visuals are educational / synthetic — not SPICE or official PSR products.
-- Not an official ISRO product.
+- SIH prototype — **not official ISRO software**.
+- Default matcher is **AKAZE + Lowe-ratio**, not trained LoFTR unless real weights run.
+- RMSE is **pixel reprojection/inlier error**, not geodetic lunar accuracy.
+- Ice CPR/DOP / planner outputs are illustrative unless explicitly labeled otherwise.
+- No confirmed ice; no operational landing certification.
+- Reliability score ≠ independent geodetic accuracy.

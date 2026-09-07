@@ -4,7 +4,10 @@
   "version": "1.0.0",
   "scripts": {
     "dev:frontend": "npm --prefix frontend run dev",
-    "dev:backend": "cd backend && . .venv/bin/activate && uvicorn main:app --reload --host 127.0.0.1 --port 8000",
+    "dev:backend": "cd backend && . .venv/bin/activate && uvicorn app.main:app --reload --host 127.0.0.1 --port 8000",
+    "dev:backend:legacy": "cd backend && . .venv/bin/activate && uvicorn main:app --reload --host 127.0.0.1 --port 8000",
+    "compose:up": "docker compose up --build",
+    "compose:down": "docker compose down",
     "build": "npm --prefix frontend run build",
     "lint": "npm --prefix frontend run build"
   }
