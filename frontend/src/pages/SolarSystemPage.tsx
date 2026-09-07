@@ -81,9 +81,9 @@ const BODIES: BodyInfo[] = [
     blurb: "Thick CO₂ clouds hide the surface in optical bands — radar mapping is required instead.",
     facts: [
       "Shows why optical + radar pairing matters for future multi-modal lunar workflows.",
-      "LunaMatch ice flow similarly pairs optical context with radar CPR/DOP logic.",
+      "LUNA/ICE demo pairs optical context with illustrative CPR/DOP planning layers.",
     ],
-    actions: [{ label: "Ice screening demo", to: "/ice", primary: true }],
+    actions: [{ label: "Open ice mission planner", to: "/ice", primary: true }],
   },
   {
     id: "earth",
