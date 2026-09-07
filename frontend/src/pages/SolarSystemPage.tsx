@@ -38,6 +38,8 @@ type BodyInfo = {
   kind: string;
   blurb: string;
   facts: string[];
+  /** Short planet facts shown when the body is selected */
+  info: Array<{ label: string; value: string }>;
   actions?: { label: string; to: string; primary?: boolean }[];
 };
 
@@ -50,10 +52,17 @@ const BODIES: BodyInfo[] = [
     distance: 0,
     kind: "G-type star",
     blurb:
-      "Solar wind and sun angle drive lunar shadow geometry — the reason registration must survive illumination change.",
+      "The Sun is the star at the center of our solar system. Its light and solar wind shape illumination and space weather across the planets — including shadow geometry on the Moon.",
+    info: [
+      { label: "Type", value: "G2V yellow dwarf" },
+      { label: "Diameter", value: "~1.39 million km" },
+      { label: "Mass", value: "~333,000 × Earth" },
+      { label: "Surface temp", value: "~5,500 °C (photosphere)" },
+      { label: "Age", value: "~4.6 billion years" },
+    ],
     facts: [
-      "Illumination angle is a core PS 26166 challenge for Chandrayaan-2 matching.",
-      "CLAHE in LunaMatch boosts local contrast when sun-angle washes or shadows terrain.",
+      "Provides nearly all energy that drives lunar day/night and polar illumination.",
+      "Changing sun angle is a core PS 26166 challenge for Chandrayaan-2 image matching.",
     ],
     actions: [{ label: "Open registration", to: "/register", primary: true }],
   },
@@ -64,10 +73,19 @@ const BODIES: BodyInfo[] = [
     radius: 0.22,
     distance: 3.2,
     kind: "Terrestrial planet",
-    blurb: "Extreme day/night swings and a heavily cratered surface — another harsh-lighting correspondence setting.",
+    blurb:
+      "Mercury is the smallest planet and closest to the Sun. It has almost no atmosphere, a heavily cratered surface, and extreme day/night temperature swings.",
+    info: [
+      { label: "Order from Sun", value: "1st" },
+      { label: "Avg. distance", value: "~0.39 AU" },
+      { label: "Diameter", value: "~4,880 km" },
+      { label: "Moons", value: "0" },
+      { label: "Day length", value: "~59 Earth days" },
+      { label: "Year length", value: "~88 Earth days" },
+    ],
     facts: [
-      "Cratered highlands resemble lunar texture challenges.",
-      "Useful analogy for scale + illumination robustness in matching.",
+      "Cratered highlands and harsh lighting resemble lunar texture challenges.",
+      "Useful analogy for scale + illumination robustness in image matching.",
     ],
     actions: [{ label: "See registration pipeline", to: "/register" }],
   },
@@ -78,7 +96,16 @@ const BODIES: BodyInfo[] = [
     radius: 0.34,
     distance: 4.2,
     kind: "Terrestrial planet",
-    blurb: "Thick CO₂ clouds hide the surface in optical bands — radar mapping is required instead.",
+    blurb:
+      "Venus is similar in size to Earth but wrapped in a thick CO₂ atmosphere and clouds. Optical surface mapping is blocked, so radar is used to see the ground.",
+    info: [
+      { label: "Order from Sun", value: "2nd" },
+      { label: "Avg. distance", value: "~0.72 AU" },
+      { label: "Diameter", value: "~12,100 km" },
+      { label: "Moons", value: "0" },
+      { label: "Atmosphere", value: "Dense CO₂ + clouds" },
+      { label: "Surface temp", value: "~465 °C" },
+    ],
     facts: [
       "Shows why optical + radar pairing matters for future multi-modal lunar workflows.",
       "LUNA/ICE demo pairs optical context with illustrative CPR/DOP planning layers.",
@@ -92,7 +119,16 @@ const BODIES: BodyInfo[] = [
     radius: 0.38,
     distance: 5.4,
     kind: "Terrestrial planet",
-    blurb: "Home of Chandrayaan-2 and the ground segment that receives OHRC / TMC-2 / IIRS products.",
+    blurb:
+      "Earth is our home world and the launch / ground-segment base for Chandrayaan-2. Oceans, atmosphere, and a large Moon make it unique in the inner solar system.",
+    info: [
+      { label: "Order from Sun", value: "3rd" },
+      { label: "Avg. distance", value: "1 AU (~150 million km)" },
+      { label: "Diameter", value: "~12,740 km" },
+      { label: "Moons", value: "1 (the Moon)" },
+      { label: "Day length", value: "~24 hours" },
+      { label: "Year length", value: "~365.25 days" },
+    ],
     facts: [
       "ISRO downlink & processing start here before lunar products are fused.",
       "Mission briefing explains the orbiter instruments LunaMatch targets.",
@@ -109,14 +145,23 @@ const BODIES: BodyInfo[] = [
     radius: 0.16,
     distance: 6.15,
     kind: "Natural satellite",
-    blurb: "LunaMatch target. Multi-mission imagery must be registered before ice or landing analyses.",
+    blurb:
+      "Earth’s Moon is LunaMatch’s target body. It has no thick atmosphere, extreme lighting contrasts, and polar cold traps relevant to ice studies.",
+    info: [
+      { label: "Type", value: "Natural satellite of Earth" },
+      { label: "Avg. distance from Earth", value: "~384,000 km" },
+      { label: "Diameter", value: "~3,475 km" },
+      { label: "Day / night cycle", value: "~29.5 Earth days" },
+      { label: "Atmosphere", value: "Exosphere (negligible)" },
+      { label: "Key challenge", value: "Sun-angle & multi-mission registration" },
+    ],
     facts: [
       "Align Chandrayaan-2 frames to LRO / SELENE-style references.",
-      "Registration enables CPR/DOP ice overlays to be trusted on a shared grid.",
+      "Registration helps place ice/landing overlays on a shared grid.",
     ],
     actions: [
       { label: "Image registration", to: "/register", primary: true },
-      { label: "Ice detection", to: "/ice" },
+      { label: "Ice mission planner", to: "/ice" },
     ],
   },
   {
@@ -126,10 +171,19 @@ const BODIES: BodyInfo[] = [
     radius: 0.3,
     distance: 7.2,
     kind: "Terrestrial planet",
-    blurb: "Iron-rich deserts and polar ice — a cousin problem for orbital image correspondence.",
+    blurb:
+      "Mars is a cold, dusty desert world with polar ice caps, giant volcanoes, and canyons. Orbital images also face illumination and scale challenges.",
+    info: [
+      { label: "Order from Sun", value: "4th" },
+      { label: "Avg. distance", value: "~1.52 AU" },
+      { label: "Diameter", value: "~6,790 km" },
+      { label: "Moons", value: "2 (Phobos, Deimos)" },
+      { label: "Day length", value: "~24.6 hours" },
+      { label: "Year length", value: "~687 Earth days" },
+    ],
     facts: [
-      "Orbital mosaics also face illumination and scale drift.",
-      "Same CLAHE → match → RANSAC story transfers as a methods analogy.",
+      "Orbital mosaics face illumination and scale drift — similar correspondence issues.",
+      "CLAHE → match → RANSAC methods transfer as a useful analogy.",
     ],
     actions: [{ label: "Try registration pipeline", to: "/register", primary: true }],
   },
@@ -140,10 +194,19 @@ const BODIES: BodyInfo[] = [
     radius: 0.9,
     distance: 9.2,
     kind: "Gas giant",
-    blurb: "A miniature solar system of moons — context for why multi-body exploration UIs help explain mission scope.",
+    blurb:
+      "Jupiter is the largest planet — a gas giant with a strong magnetic field, bands of clouds, and dozens of moons (a miniature solar system).",
+    info: [
+      { label: "Order from Sun", value: "5th" },
+      { label: "Avg. distance", value: "~5.2 AU" },
+      { label: "Diameter", value: "~140,000 km" },
+      { label: "Moons", value: "95+ known" },
+      { label: "Day length", value: "~10 hours" },
+      { label: "Year length", value: "~12 Earth years" },
+    ],
     facts: [
-      "Not a LunaMatch processing target — included for solar-system orientation.",
-      "Helps judges place the Moon among peer destinations.",
+      "Included for solar-system orientation — not a LunaMatch processing target.",
+      "Helps place the Moon among other exploration destinations.",
     ],
     actions: [{ label: "Back to mission briefing", to: "/briefing" }],
   },
@@ -154,12 +217,21 @@ const BODIES: BodyInfo[] = [
     radius: 0.78,
     distance: 11.2,
     kind: "Gas giant",
-    blurb: "Ringed world; icy moons host some of the outer system's most interesting volatiles.",
-    facts: [
-      "Icy-moon science is a distant cousin of lunar PSR ice screening.",
-      "LunaMatch keeps the ice demo lunar-focused (CPR > 1 and DOP < 0.13).",
+    blurb:
+      "Saturn is famous for its bright ring system. It is a gas giant with many icy moons, some of interest for outer-system volatiles research.",
+    info: [
+      { label: "Order from Sun", value: "6th" },
+      { label: "Avg. distance", value: "~9.5 AU" },
+      { label: "Diameter", value: "~116,500 km" },
+      { label: "Moons", value: "140+ known" },
+      { label: "Rings", value: "Prominent ice/rock ring system" },
+      { label: "Year length", value: "~29 Earth years" },
     ],
-    actions: [{ label: "Open ice demo", to: "/ice", primary: true }],
+    facts: [
+      "Icy-moon science is a distant cousin of lunar polar cold-trap studies.",
+      "LunaMatch keeps the ice planner focused on the Moon.",
+    ],
+    actions: [{ label: "Open ice mission planner", to: "/ice", primary: true }],
   },
   {
     id: "uranus",
@@ -168,10 +240,19 @@ const BODIES: BodyInfo[] = [
     radius: 0.5,
     distance: 13.0,
     kind: "Ice giant",
-    blurb: "Tipped on its side with extreme seasons and a faint ring system.",
+    blurb:
+      "Uranus is an ice giant tipped on its side, with extreme seasons and a faint ring system. It appears blue-green from methane in its atmosphere.",
+    info: [
+      { label: "Order from Sun", value: "7th" },
+      { label: "Avg. distance", value: "~19.2 AU" },
+      { label: "Diameter", value: "~50,700 km" },
+      { label: "Moons", value: "28 known" },
+      { label: "Tilt", value: "~98° (rolls on its side)" },
+      { label: "Year length", value: "~84 Earth years" },
+    ],
     facts: [
       "Educational body in this explorer — use Moon / Earth for LunaMatch workflows.",
-      "Completes the planetary tour for judges navigating the demo.",
+      "Completes the planetary tour for navigating the demo.",
     ],
     actions: [{ label: "Go to Moon workflow", to: "/register", primary: true }],
   },
@@ -182,10 +263,19 @@ const BODIES: BodyInfo[] = [
     radius: 0.48,
     distance: 14.6,
     kind: "Ice giant",
-    blurb: "Farthest major planet; methane-tinted atmosphere and the fastest winds in the system.",
+    blurb:
+      "Neptune is the farthest major planet from the Sun. It has a methane-tinted atmosphere and some of the fastest winds in the solar system.",
+    info: [
+      { label: "Order from Sun", value: "8th" },
+      { label: "Avg. distance", value: "~30.1 AU" },
+      { label: "Diameter", value: "~49,200 km" },
+      { label: "Moons", value: "16 known" },
+      { label: "Winds", value: "Up to ~2,000 km/h" },
+      { label: "Year length", value: "~165 Earth years" },
+    ],
     facts: [
-      "Completes the eight-planet tour for the explorer page.",
-      "LunaMatch science path remains Earth → Moon registration → ice screen.",
+      "Completes the eight-planet tour on this explorer page.",
+      "LunaMatch science path remains Earth → Moon registration → ice planner.",
     ],
     actions: [
       { label: "Mission briefing", to: "/briefing", primary: true },
@@ -437,32 +527,48 @@ export function SolarSystemPage() {
         </GlassCard>
 
         <GlassCard className="h-fit space-y-4">
-          <p className="kicker">Selected body · {selected.kind}</p>
-          <h2 className="text-2xl font-semibold">{selected.name}</h2>
-          <p className="text-sm leading-7 text-[var(--muted)]">{selected.blurb}</p>
+          <div key={selected.id} className="space-y-4">
+            <p className="kicker">Selected body · {selected.kind}</p>
+            <h2 className="text-2xl font-semibold">{selected.name}</h2>
+            <p className="text-sm leading-7 text-[var(--muted)]">{selected.blurb}</p>
 
-          <ul className="space-y-2 rounded-2xl border border-[var(--border)] bg-black/20 p-4 text-sm leading-6 text-[var(--muted)]">
-            {selected.facts.map((fact) => (
-              <li key={fact} className="flex gap-2">
-                <span className="text-[var(--accent)]">•</span>
-                <span>{fact}</span>
-              </li>
-            ))}
-          </ul>
-
-          {selected.actions?.length ? (
-            <div className="flex flex-wrap gap-3 pt-1">
-              {selected.actions.map((a) => (
-                <Link
-                  key={`${a.to}-${a.label}`}
-                  to={a.to}
-                  className={`btn ${a.primary ? "btn-primary" : "btn-secondary"}`}
-                >
-                  {a.label}
-                </Link>
-              ))}
+            <div className="overflow-hidden rounded-2xl border border-[var(--border)] bg-black/20">
+              <p className="border-b border-[var(--border)] px-4 py-2.5 text-[10px] uppercase tracking-[0.14em] text-[var(--muted)]">
+                Planet information
+              </p>
+              <dl className="divide-y divide-[var(--border)]">
+                {selected.info.map((row) => (
+                  <div key={row.label} className="grid grid-cols-[0.9fr_1.1fr] gap-3 px-4 py-2.5 text-sm">
+                    <dt className="text-[var(--muted)]">{row.label}</dt>
+                    <dd className="font-medium text-[var(--text)]">{row.value}</dd>
+                  </div>
+                ))}
+              </dl>
             </div>
-          ) : null}
+
+            <ul className="space-y-2 rounded-2xl border border-[var(--border)] bg-black/20 p-4 text-sm leading-6 text-[var(--muted)]">
+              {selected.facts.map((fact) => (
+                <li key={fact} className="flex gap-2">
+                  <span className="text-[var(--accent)]">•</span>
+                  <span>{fact}</span>
+                </li>
+              ))}
+            </ul>
+
+            {selected.actions?.length ? (
+              <div className="flex flex-wrap gap-3 pt-1">
+                {selected.actions.map((a) => (
+                  <Link
+                    key={`${a.to}-${a.label}`}
+                    to={a.to}
+                    className={`btn ${a.primary ? "btn-primary" : "btn-secondary"}`}
+                  >
+                    {a.label}
+                  </Link>
+                ))}
+              </div>
+            ) : null}
+          </div>
 
           <div className="flex flex-wrap gap-2 border-t border-[var(--border)] pt-4">
             {BODIES.map((b) => (
@@ -473,6 +579,7 @@ export function SolarSystemPage() {
                   selectedId === b.id ? "btn-primary" : "btn-secondary"
                 }`}
                 onClick={() => selectBody(b.id)}
+                aria-pressed={selectedId === b.id}
               >
                 {b.name}
               </button>
