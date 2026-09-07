@@ -23,7 +23,7 @@ export function TopBar() {
         <nav className="hidden items-center gap-1 md:flex">
           {[
             ["/", "Home"],
-            ["/register", "Register"],
+            ["/register", "REGISTER"],
             ["/ice", "LUNA/ICE"],
             ["/ice/context", "Ice Context"],
             ["/solar", "Solar"],
