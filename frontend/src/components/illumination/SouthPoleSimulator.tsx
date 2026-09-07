@@ -24,10 +24,18 @@ export function SouthPoleSimulator() {
   );
 
   useEffect(() => {
-    if (!sweep) return;
-    const id = window.setInterval(() => setAzimuth((a) => (a + 4) % 360), 80);
-    return () => window.clearInterval(id);
-  }, [sweep]);
+    if (!sweep || accumulate) return;
+    let raf = 0;
+    let last = performance.now();
+    const tick = (now: number) => {
+      const dt = Math.min(0.05, (now - last) / 1000);
+      last = now;
+      setAzimuth((a) => (a + dt * 40) % 360);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [sweep, accumulate]);
 
   useEffect(() => {
     const canvas = canvasRef.current;

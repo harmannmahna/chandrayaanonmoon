@@ -26,7 +26,6 @@ export function TopBar() {
             ["/register", "REGISTER"],
             ["/ice", "LUNA/ICE"],
             ["/solar", "Solar"],
-            ["/illumination", "Illumination Lab"],
             ["/briefing", "Briefing"],
           ].map(([href, label]) => {
             const active =

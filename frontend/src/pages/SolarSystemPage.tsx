@@ -13,6 +13,20 @@ import { DoubleSide, Group, MathUtils, Vector3 } from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { GlassCard } from "../components/GlassCard";
 import { useAppStore } from "../store/appStore";
+import { MoonPhaseTab } from "../components/illumination/MoonPhaseTab";
+import { CraterShadowSimulator } from "../components/illumination/CraterShadowSimulator";
+import { SouthPoleSimulator } from "../components/illumination/SouthPoleSimulator";
+import { ProjectRelevance } from "../components/illumination/ProjectRelevance";
+
+type SolarSection = "system" | "phases" | "crater" | "pole" | "relevance";
+
+const SECTIONS: { id: SolarSection; label: string }[] = [
+  { id: "system", label: "Solar System" },
+  { id: "phases", label: "Moon Phases" },
+  { id: "crater", label: "Crater Shadows" },
+  { id: "pole", label: "South Pole / Cold-Trap" },
+  { id: "relevance", label: "Project Relevance" },
+];
 
 type BodyInfo = {
   id: string;
@@ -315,6 +329,7 @@ function CameraFocus({
 
 export function SolarSystemPage() {
   const theme = useAppStore((s) => s.theme);
+  const [section, setSection] = useState<SolarSection>("system");
   const [selectedId, setSelectedId] = useState("moon");
   const [focusTarget, setFocusTarget] = useState<Vector3 | null>(null);
   const [autoRotate, setAutoRotate] = useState(true);
@@ -333,22 +348,32 @@ export function SolarSystemPage() {
 
   return (
     <div className="page space-y-6">
-      <GlassCard>
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="kicker">Explore</p>
-            <h1 className="mt-2 text-3xl font-semibold">Solar System</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-7 text-[var(--muted)]">
-              Click any planet in the view or use the buttons. Each body opens facts plus LunaMatch links
-              where relevant.
-            </p>
-          </div>
-          <Link to="/illumination" className="btn btn-primary !min-h-9 text-xs">
-            Illumination Lab
-          </Link>
+      <GlassCard className="space-y-4">
+        <div>
+          <p className="kicker">Explore · Solar + Illumination Lab</p>
+          <h1 className="mt-2 text-3xl font-semibold">Solar System & Illumination</h1>
+          <p className="mt-2 max-w-3xl text-sm leading-7 text-[var(--muted)]">
+            Orbit the planets, then explore educational sun-angle visuals — Moon phases, illustrative crater shadows, and
+            polar cold-trap context — without changing Register or Ice pipelines.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2" role="tablist" aria-label="Solar sections">
+          {SECTIONS.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              role="tab"
+              aria-selected={section === s.id}
+              className={`btn !min-h-9 text-xs ${section === s.id ? "btn-primary" : "btn-secondary"}`}
+              onClick={() => setSection(s.id)}
+            >
+              {s.label}
+            </button>
+          ))}
         </div>
       </GlassCard>
 
+      {section === "system" ? (
       <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
         <GlassCard className="min-h-[480px] overflow-hidden !p-2">
           <div className="h-[480px] w-full overflow-hidden rounded-2xl">
@@ -444,8 +469,31 @@ export function SolarSystemPage() {
               </button>
             ))}
           </div>
+          <button type="button" className="btn btn-primary w-full text-xs" onClick={() => setSection("phases")}>
+            Open Illumination Lab · Moon Phases
+          </button>
         </GlassCard>
       </div>
+      ) : null}
+
+      {section === "phases" ? <MoonPhaseTab /> : null}
+      {section === "crater" ? <CraterShadowSimulator /> : null}
+      {section === "pole" ? <SouthPoleSimulator /> : null}
+      {section === "relevance" ? <ProjectRelevance /> : null}
+
+      {section !== "system" ? (
+        <GlassCard className="space-y-2 text-xs leading-6 text-[var(--muted)]">
+          <p className="kicker">Prototype assumptions and limits</p>
+          <ul className="space-y-1">
+            <li>• Moon phase and crater-shadow visuals are educational synthetic simulations.</li>
+            <li>• No SPICE / official PSR / calibrated mission products are used here.</li>
+            <li>• This Illumination Lab explains context only — it does not alter Register or Ice outputs.</li>
+          </ul>
+          <button type="button" className="btn btn-secondary !min-h-9 text-xs" onClick={() => setSection("system")}>
+            Back to Solar System view
+          </button>
+        </GlassCard>
+      ) : null}
     </div>
   );
 }

@@ -6,7 +6,6 @@ import { LandingPage } from "./pages/LandingPage";
 import { RegistrationWizard } from "./pages/registration/RegistrationWizard";
 import { IceDetectionPage } from "./pages/IceDetectionPage";
 import { SolarSystemPage } from "./pages/SolarSystemPage";
-import { IlluminationLabPage } from "./pages/IlluminationLabPage";
 import { MissionBriefingPage } from "./pages/MissionBriefingPage";
 import { useAppStore } from "./store/appStore";
 import { useEffect } from "react";
@@ -49,7 +48,7 @@ export default function App() {
         <Route path="/ice" element={<IceDetectionPage />} />
         <Route path="/ice/context" element={<Navigate to="/briefing" replace />} />
         <Route path="/solar" element={<SolarSystemPage />} />
-        <Route path="/illumination" element={<IlluminationLabPage />} />
+        <Route path="/illumination" element={<Navigate to="/solar" replace />} />
         <Route path="/briefing" element={<MissionBriefingPage />} />
       </Route>
     </Routes>
