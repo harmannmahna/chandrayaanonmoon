@@ -20,6 +20,20 @@ async function request(path: string, init?: RequestInit): Promise<Response> {
 async function json<T>(res: Response): Promise<T> {
   if (!res.ok) {
     const text = await res.text();
+    try {
+      const data = JSON.parse(text) as { detail?: unknown };
+      if (data?.detail != null) {
+        const detail = typeof data.detail === "string" ? data.detail : JSON.stringify(data.detail);
+        if (/unknown job/i.test(detail)) {
+          throw new Error(
+            "Session expired or the API restarted. Please upload images or click Load demo pair again.",
+          );
+        }
+        throw new Error(detail);
+      }
+    } catch (err) {
+      if (err instanceof Error && err.message && err.message !== text) throw err;
+    }
     throw new Error(text || `Request failed (${res.status})`);
   }
   return res.json() as Promise<T>;

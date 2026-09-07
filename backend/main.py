@@ -16,7 +16,7 @@ from starlette.middleware.base import BaseHTTPMiddleware
 
 from pipeline.clahe import run_clahe
 from pipeline.ice import run_ice_detection
-from pipeline.jobs import JOBS
+from pipeline.jobs import init_jobs
 from pipeline.matcher import run_loftr_style
 from pipeline.ransac import run_ransac
 
@@ -28,6 +28,8 @@ FRONTEND_DIST = ROOT.parent / "frontend" / "dist"
 
 for d in (UPLOAD_DIR, RESULT_DIR, SAMPLE_DIR):
     d.mkdir(parents=True, exist_ok=True)
+
+JOBS = init_jobs(UPLOAD_DIR, RESULT_DIR)
 
 app = FastAPI(title="LunaMatch API", version="1.0.0")
 
@@ -250,8 +252,11 @@ async def load_demo() -> dict[str, Any]:
 @app.post("/process/clahe")
 async def process_clahe(job_id: str = Form(...)) -> dict[str, Any]:
     job = JOBS.get(job_id)
-    if not job:
-        raise HTTPException(404, "Unknown job")
+    if not job or not job.get("paths"):
+        raise HTTPException(
+            404,
+            "Unknown job — the server may have restarted. Please upload images or load the demo pair again.",
+        )
     JOBS.update(job_id, stage="clahe", progress=0.15, message="Running CLAHE…")
     paths: list[str] = job["paths"]
     out_dir = RESULT_DIR / job_id / "clahe"
@@ -290,7 +295,10 @@ async def process_clahe(job_id: str = Form(...)) -> dict[str, Any]:
 async def process_loftr(job_id: str = Form(...), source_index: int = Form(1)) -> dict[str, Any]:
     job = JOBS.get(job_id)
     if not job:
-        raise HTTPException(404, "Unknown job")
+        raise HTTPException(
+            404,
+            "Unknown job — the server may have restarted. Please upload images or load the demo pair again.",
+        )
     JOBS.update(job_id, stage="loftr", progress=0.4, message="Finding matching points…")
     ref_i = int(job["reference_index"])
     enhanced = job.get("enhanced_paths") or job["paths"]
@@ -331,7 +339,10 @@ async def process_loftr(job_id: str = Form(...), source_index: int = Form(1)) ->
 async def process_ransac(job_id: str = Form(...)) -> dict[str, Any]:
     job = JOBS.get(job_id)
     if not job:
-        raise HTTPException(404, "Unknown job")
+        raise HTTPException(
+            404,
+            "Unknown job — the server may have restarted. Please upload images or load the demo pair again.",
+        )
     match = job.get("match_payload")
     if not match:
         raise HTTPException(400, "Run matching first")
@@ -374,7 +385,10 @@ async def process_ice(job_id: str | None = Form(None)) -> dict[str, Any]:
 def status(job_id: str) -> dict[str, Any]:
     job = JOBS.get(job_id)
     if not job:
-        raise HTTPException(404, "Unknown job")
+        raise HTTPException(
+            404,
+            "Unknown job — the server may have restarted. Please upload images or load the demo pair again.",
+        )
     return {
         "job_id": job_id,
         "stage": job.get("stage"),
