@@ -37,6 +37,18 @@ function nearestRmseGuide(rmse: number): number {
   return best;
 }
 
+async function downloadImage(url: string, filename: string) {
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`Download failed (${res.status})`);
+  const blob = await res.blob();
+  const href = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = href;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(href);
+}
+
 function isImageFile(file: File | undefined | null): file is File {
   if (!file) return false;
   if (file.type.startsWith("image/")) return true;
@@ -495,6 +507,34 @@ export function RegistrationWizard() {
             <p className="text-xs leading-5 text-[var(--muted)]">
               Guide values are reference levels for reading RMSE. Your measured inlier reprojection error is highlighted.
             </p>
+            <div className="flex flex-wrap gap-3">
+              <button
+                type="button"
+                className="btn btn-secondary"
+                disabled={!loftr?.preview_url}
+                onClick={() => {
+                  if (!loftr?.preview_url) return;
+                  void downloadImage(loftr.preview_url, "matched_spots.png").catch((e) =>
+                    setError(e instanceof Error ? e.message : "Matched download failed"),
+                  );
+                }}
+              >
+                Download matched spots
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                disabled={!loftr?.unmatched_preview_url}
+                onClick={() => {
+                  if (!loftr?.unmatched_preview_url) return;
+                  void downloadImage(loftr.unmatched_preview_url, "unmatched_spots.png").catch((e) =>
+                    setError(e instanceof Error ? e.message : "Unmatched download failed"),
+                  );
+                }}
+              >
+                Download unmatched spots
+              </button>
+            </div>
           </GlassCard>
         </div>
       ) : null}
