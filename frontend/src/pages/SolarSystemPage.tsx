@@ -1,5 +1,6 @@
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { OrbitControls, Stars } from "@react-three/drei";
+import { AnimatePresence, motion } from "framer-motion";
 import {
   useEffect,
   useMemo,
@@ -373,8 +374,16 @@ export function SolarSystemPage() {
         </div>
       </GlassCard>
 
+      <AnimatePresence mode="wait">
       {section === "system" ? (
-      <div className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+      <motion.div
+        key="system"
+        className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]"
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -10 }}
+        transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+      >
         <GlassCard className="min-h-[480px] overflow-hidden !p-2">
           <div className="h-[480px] w-full overflow-hidden rounded-2xl">
             <Canvas camera={{ position: [0, 6, 16], fov: 42 }}>
@@ -473,13 +482,54 @@ export function SolarSystemPage() {
             Open Illumination Lab · Moon Phases
           </button>
         </GlassCard>
-      </div>
+      </motion.div>
       ) : null}
 
-      {section === "phases" ? <MoonPhaseTab /> : null}
-      {section === "crater" ? <CraterShadowSimulator /> : null}
-      {section === "pole" ? <SouthPoleSimulator /> : null}
-      {section === "relevance" ? <ProjectRelevance /> : null}
+      {section === "phases" ? (
+        <motion.div
+          key="phases"
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <MoonPhaseTab />
+        </motion.div>
+      ) : null}
+      {section === "crater" ? (
+        <motion.div
+          key="crater"
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <CraterShadowSimulator />
+        </motion.div>
+      ) : null}
+      {section === "pole" ? (
+        <motion.div
+          key="pole"
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <SouthPoleSimulator />
+        </motion.div>
+      ) : null}
+      {section === "relevance" ? (
+        <motion.div
+          key="relevance"
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <ProjectRelevance />
+        </motion.div>
+      ) : null}
+      </AnimatePresence>
 
       {section !== "system" ? (
         <GlassCard className="space-y-2 text-xs leading-6 text-[var(--muted)]">

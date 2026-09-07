@@ -19,7 +19,7 @@ function PhaseBodies({
 
   useFrame((_, dt) => {
     if (playingRef.current) {
-      phaseRef.current = (phaseRef.current + dt * 28) % 360;
+      phaseRef.current = (phaseRef.current + dt * 22) % 360;
       onPhaseTick(phaseRef.current);
     }
     const angle = (phaseRef.current * Math.PI) / 180;

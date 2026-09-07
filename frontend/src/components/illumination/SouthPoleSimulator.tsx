@@ -30,7 +30,7 @@ export function SouthPoleSimulator() {
     const tick = (now: number) => {
       const dt = Math.min(0.05, (now - last) / 1000);
       last = now;
-      setAzimuth((a) => (a + dt * 40) % 360);
+      setAzimuth((a) => (a + dt * 32) % 360);
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);

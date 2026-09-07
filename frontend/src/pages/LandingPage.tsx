@@ -38,9 +38,9 @@ export function LandingPage() {
     <div className="page grid gap-8 lg:grid-cols-[1.05fr_0.95fr] lg:items-center">
       <div className="space-y-6">
         <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          initial={{ opacity: 0, y: 20, filter: "blur(6px)" }}
+          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+          transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
         >
           <GlassCard className="!p-6">
             <p className="kicker">Smart India Hackathon · PS 26166</p>
@@ -55,9 +55,9 @@ export function LandingPage() {
           {CARDS.map((card, i) => (
             <motion.div
               key={card.to}
-              initial={{ opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, delay: 0.08 + i * 0.07, ease: [0.22, 1, 0.36, 1] }}
+              initial={{ opacity: 0, y: 22, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.1 + i * 0.08, ease: [0.22, 1, 0.36, 1] }}
             >
               <GlassCard hover className="h-full w-full" onClick={() => navigate(card.to)}>
                 <card.icon className="mb-3 text-[var(--accent)]" size={22} />

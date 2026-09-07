@@ -97,21 +97,21 @@ input {
   border: 1px solid transparent;
   cursor: pointer;
   transition:
-    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-    filter 0.28s ease,
-    background 0.28s ease,
-    box-shadow 0.28s ease,
-    border-color 0.28s ease;
+    transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 0.32s ease,
+    background 0.32s ease,
+    box-shadow 0.32s ease,
+    border-color 0.32s ease;
   will-change: transform;
 }
 
 .btn:hover:not(:disabled) {
-  transform: translateY(-2px);
-  filter: brightness(1.06);
+  transform: translateY(-3px);
+  filter: brightness(1.07);
 }
 
 .btn:active:not(:disabled) {
-  transform: translateY(0) scale(0.98);
+  transform: translateY(0) scale(0.975);
 }
 
 .btn:disabled {
@@ -123,6 +123,10 @@ input {
   background: #fff;
   color: #05070f;
   box-shadow: 0 0 24px rgba(255, 255, 255, 0.12);
+}
+
+.btn-primary:hover:not(:disabled) {
+  box-shadow: 0 8px 28px rgba(255, 255, 255, 0.18);
 }
 
 html[data-theme="light"] .btn-primary {
