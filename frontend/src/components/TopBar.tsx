@@ -23,23 +23,30 @@ export function TopBar() {
         <nav className="hidden items-center gap-1 md:flex">
           {[
             ["/", "Home"],
-            ["/register", "Register"],
-            ["/ice", "Ice"],
+            ["/register", "LUNA/REGISTER"],
+            ["/ice", "LUNA/ICE"],
+            ["/ice/context", "Ice Context"],
             ["/solar", "Solar"],
             ["/briefing", "Briefing"],
-          ].map(([href, label]) => (
-            <Link
-              key={href}
-              to={href}
-              className={`rounded-full px-3 py-1.5 text-xs tracking-[0.08em] uppercase transition-all duration-300 ${
-                location.pathname === href
-                  ? "bg-white/8 text-[var(--text)] underline decoration-[var(--accent)] underline-offset-4"
-                  : "text-[var(--muted)] hover:bg-white/5 hover:text-[var(--text)]"
-              }`}
-            >
-              {label}
-            </Link>
-          ))}
+          ].map(([href, label]) => {
+            const active =
+              href === "/ice"
+                ? location.pathname === "/ice"
+                : location.pathname === href || (href !== "/" && location.pathname.startsWith(href));
+            return (
+              <Link
+                key={href}
+                to={href}
+                className={`rounded-full px-3 py-1.5 text-xs tracking-[0.08em] uppercase transition-all duration-300 ${
+                  active
+                    ? "bg-white/8 text-[var(--text)] underline decoration-[var(--accent)] underline-offset-4"
+                    : "text-[var(--muted)] hover:bg-white/5 hover:text-[var(--text)]"
+                }`}
+              >
+                {label}
+              </Link>
+            );
+          })}
         </nav>
         <div className="flex items-center gap-2">
           <button
