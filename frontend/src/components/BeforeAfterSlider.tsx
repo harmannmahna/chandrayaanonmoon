@@ -65,10 +65,10 @@ export function BeforeAfterSlider({
         value={pos}
         onChange={(e) => setPos(Number(e.target.value))}
       />
-      <span className="pointer-events-none absolute left-3 top-3 rounded bg-black/60 px-2 py-1 text-[10px] uppercase tracking-wider">
+      <span className="pointer-events-none absolute left-3 top-3 z-10 rounded-md bg-black px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-white shadow-md">
         {beforeLabel}
       </span>
-      <span className="pointer-events-none absolute right-3 top-3 rounded bg-black/60 px-2 py-1 text-[10px] uppercase tracking-wider">
+      <span className="pointer-events-none absolute right-3 top-3 z-10 rounded-md bg-black px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wider text-white shadow-md">
         {afterLabel}
       </span>
     </div>
