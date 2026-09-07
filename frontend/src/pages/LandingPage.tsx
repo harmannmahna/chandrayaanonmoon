@@ -43,11 +43,20 @@ export function LandingPage() {
           transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
         >
           <GlassCard className="!p-6">
-            <p className="kicker">Smart India Hackathon · PS 26166</p>
+            <p className="kicker">Landing · Smart India Hackathon · PS 26166</p>
             <h1 className="mt-3 text-4xl font-semibold tracking-tight md:text-5xl">LunaMatch</h1>
             <p className="mt-3 max-w-xl text-[var(--muted)] leading-7">
-              Multi-modal, sun-angle and scale-invariant lunar image correspondence.
+              Multi-modal, sun-angle and scale-invariant lunar image correspondence — pitch your mission, then explore the
+              interactive Moon.
             </p>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <button type="button" className="btn btn-primary" onClick={() => navigate("/register")}>
+                Start registration
+              </button>
+              <button type="button" className="btn btn-secondary" onClick={() => navigate("/briefing")}>
+                Mission briefing
+              </button>
+            </div>
           </GlassCard>
         </motion.div>
 
@@ -75,6 +84,7 @@ export function LandingPage() {
         transition={{ duration: 0.55, delay: 0.12, ease: [0.22, 1, 0.36, 1] }}
       >
         <GlassCard className="min-h-[420px] overflow-hidden !p-2">
+          <p className="px-3 pb-1 pt-3 text-xs uppercase tracking-[0.14em] text-[var(--muted)]">Interactive 3D Moon</p>
           <div className="h-[420px] w-full overflow-hidden rounded-2xl">
             <MoonScene />
           </div>
