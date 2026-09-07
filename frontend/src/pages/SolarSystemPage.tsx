@@ -80,7 +80,7 @@ const BODIES: BodyInfo[] = [
     kind: "Terrestrial planet",
     blurb: "Thick CO₂ clouds hide the surface in optical bands — radar mapping is required instead.",
     facts: [
-      "Shows why multi-modal data (optical + radar) matters.",
+      "Shows why optical + radar pairing matters for future multi-modal lunar workflows.",
       "LunaMatch ice flow similarly pairs optical context with radar CPR/DOP logic.",
     ],
     actions: [{ label: "Ice screening demo", to: "/ice", primary: true }],
@@ -355,7 +355,7 @@ export function SolarSystemPage() {
           <h1 className="mt-2 text-3xl font-semibold">Solar System & Illumination</h1>
           <p className="mt-2 max-w-3xl text-sm leading-7 text-[var(--muted)]">
             Orbit the planets, then explore educational sun-angle visuals — Moon phases, illustrative crater shadows, and
-            polar cold-trap context — without changing Register or Ice pipelines.
+            polar cold-trap context. Teaching layer only; Register and Ice pipelines stay unchanged.
           </p>
         </div>
         <div className="flex flex-wrap gap-2" role="tablist" aria-label="Solar sections">

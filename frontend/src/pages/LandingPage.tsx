@@ -14,14 +14,14 @@ const CARDS = [
   {
     to: "/ice",
     icon: Snowflake,
-    title: "Ice Detection",
-    desc: "Map water-ice signatures in permanently shadowed craters",
+    title: "Ice Mission Planner",
+    desc: "Prototype polar planning with optical context and illustrative radar layers",
   },
   {
     to: "/solar",
     icon: Orbit,
-    title: "Solar System Explorer",
-    desc: "Sun, Moon and the eight planets, to scale of relation",
+    title: "Solar & Illumination",
+    desc: "Solar System explorer plus educational sun-angle labs",
   },
   {
     to: "/briefing",
@@ -46,8 +46,8 @@ export function LandingPage() {
             <p className="kicker">Landing · Smart India Hackathon · PS 26166</p>
             <h1 className="mt-3 text-4xl font-semibold tracking-tight md:text-5xl">LunaMatch</h1>
             <p className="mt-3 max-w-xl text-[var(--muted)] leading-7">
-              Multi-modal, sun-angle and scale-invariant lunar image correspondence — pitch your mission, then explore the
-              interactive Moon.
+              A sun-angle–robust lunar image registration and polar mission-planning prototype for Smart India Hackathon
+              PS 26166 — then explore the interactive Moon.
             </p>
             <div className="mt-5 flex flex-wrap gap-3">
               <button type="button" className="btn btn-primary" onClick={() => navigate("/register")}>

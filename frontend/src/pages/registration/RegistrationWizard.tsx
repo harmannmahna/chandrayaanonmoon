@@ -13,7 +13,7 @@ const CLAHE_TIPS = [
   "Bonus tip: Unlike global equalization, CLAHE clips the histogram first so flat terrain noise is not over-amplified.",
 ];
 const LOFTR_TIPS = [
-  "Bonus tip: LoFTR-style matching uses attention cues, surviving illumination swings that break SIFT/ORB.",
+  "Bonus tip: Stage 2 uses an AKAZE + Lowe-ratio correspondence adapter (LoFTR-ready interface when GPU weights are available).",
   "Bonus tip: Low-confidence tiles usually mean deep shadow, missing overlap, or textureless mare.",
 ];
 const RANSAC_TIPS = [
@@ -269,7 +269,7 @@ export function RegistrationWizard() {
         <p className="kicker">Option A · Core PS flow</p>
         <h1 className="mt-2 text-3xl font-semibold">Image Registration Wizard</h1>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-[var(--muted)]">
-          CLAHE → LoFTR-style matching → RANSAC, with animations and plain-language diagnostics.
+          CLAHE → correspondence matching → RANSAC, with animations and plain-language diagnostics.
         </p>
       </GlassCard>
 
@@ -389,7 +389,7 @@ export function RegistrationWizard() {
       {stage === "loftr" && !busy && loftr ? (
         <div className="space-y-4">
           <GlassCard className="space-y-4">
-            <p className="kicker">Stage 2 · LoFTR-style matching</p>
+            <p className="kicker">Stage 2 · Correspondence matching</p>
             <img src={loftr.preview_url} alt="Matches" className="w-full rounded-2xl border border-[var(--border)]" />
             <p className="text-xs text-[var(--muted)]">
               <span className="mr-3 inline-flex items-center gap-1.5"><span className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-400" /> Green = matched</span>
@@ -411,7 +411,11 @@ export function RegistrationWizard() {
                 value={`${((loftr.matched_mean_confidence ?? loftr.mean_confidence) * 100).toFixed(1)}%`}
                 tip="Mean confidence of matched (green) keypoints only — unmatched/red points are excluded from this average."
               />
-              <Metric label="Matcher" value="LoFTR-style" tip={loftr.matcher} />
+              <Metric
+                label="Matcher"
+                value="AKAZE + ratio"
+                tip={loftr.matcher || "AKAZE + Lowe ratio correspondence adapter (LoFTR-ready interface)."}
+              />
             </div>
             <div className="rounded-2xl border border-[var(--border)] p-4">
               <p className="kicker">Why is confidence low?</p>

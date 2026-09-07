@@ -1,11 +1,11 @@
-# Ice Detection Model — End-to-End Guide
+# Ice Mission Planner — End-to-End Guide
 
 This document covers both:
 
 1. **Legacy backend screening** (`POST /process/ice` · `backend/pipeline/ice.py`) — still available.
-2. **LUNA/ICE staged dashboard** (browser-only Stage 3 on `/ice`) — upload → CLAHE enhance → radar/landing/route/volume planning.
+2. **LUNA/ICE staged planner** (browser Stage 3 on `/ice`) — upload → CLAHE enhance → illustrative radar/landing/route/volume simulator.
 
-> **Honesty note:** Demo CPR/DOP layers are **illustrative / supplied**. Prefer “potential subsurface-ice signature” and “planning support, not mission certification.” Never “confirmed ice.”
+> **Honesty note:** Demo CPR/DOP layers are **illustrative / supplied**. Prefer “potential subsurface-ice signature”, “mission-planning simulator”, and “planning support, not mission certification.” Never “confirmed ice.”
 
 ---
 
@@ -15,16 +15,16 @@ This document covers both:
 | --- | --- | --- |
 | 1 · Upload | `/ice` | Optical images or demo pair (reuses `/upload` / `/demo/load`) |
 | 2 · Enhance | `/ice` | CLAHE via `/process/clahe` + before/after slider |
-| 3 · Ice mission | `/ice` | In-browser demo crater grid: CPR/DOP/PSR → clusters → landing → A* route → volume → ZIP export |
-| Context | `/ice/context` | CPR/DOP definitions, workflow, limits |
+| 3 · Mission planner | `/ice` | Browser **synthetic** crater simulator: CPR/DOP/PSR → clusters → landing → A* route → volume → ZIP export |
+| Context | `/briefing` (panel 05) | CPR/DOP definitions, workflow, limits |
 
 Core browser modules live under `frontend/src/lib/ice/`:
 
-- `demoData.ts` — deterministic 160×160 doubly-shadowed crater
+- `demoData.ts` — deterministic 160×160 doubly-shadowed crater (**synthetic**)
 - `iceAnalysis.ts` — `IceCandidate = (CPR > thr) ∧ (DOP < thr) ∧ DoublyShadowedMask`
 - `landingAnalysis.ts` — weighted prototype landing suitability
 - `pathPlanning.ts` — 8-neighbour A* (science-first / solar-aware / battery-supported)
-- `volumeEstimator.ts` — `V = A × depth × fraction`, `M = V × 917`
+- `volumeEstimator.ts` — `V = A × depth × fraction`, `M = V × 917` (scenario explorer)
 - `exports.ts` — PNG/JSON/GeoJSON/CSV + JSZip mission package
 
 Self-check: `cd frontend && npm run ice:selfcheck`
@@ -67,10 +67,10 @@ Depth is user-selected **0–5 m**. This is a **scenario-based ice-volume estima
 
 | File | Role |
 | --- | --- |
-| `frontend/src/pages/IceDetectionPage.tsx` | Staged LUNA/ICE wizard |
-| `frontend/src/pages/ice/IceContextPage.tsx` | Context / honesty docs |
+| `frontend/src/pages/IceDetectionPage.tsx` | Staged LUNA/ICE mission-planning simulator |
+| `frontend/src/pages/MissionBriefingPage.tsx` | Briefing panel 05 · ice/planner context |
 | `frontend/src/lib/ice/*` | Browser analysis + exports |
-| `backend/pipeline/ice.py` | Legacy FastAPI ice screening |
+| `backend/pipeline/ice.py` | Legacy FastAPI ice screening overlay |
 
 ---
 

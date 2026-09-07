@@ -8,11 +8,11 @@ import numpy as np
 
 def run_loftr_style(ref_bgr: np.ndarray, src_bgr: np.ndarray) -> dict[str, Any]:
     """
-    LoFTR-style dense correspondence adapter.
+    Correspondence adapter used by Register Stage 2.
 
     Uses AKAZE + Lowe ratio + grid-aware scoring so the UI can show match
     confidence and weak regions without requiring a GPU LoFTR checkpoint.
-    Swap this module for kornia KF.LoFTR when weights are available.
+    Same response shape can later wrap kornia KF.LoFTR when weights are available.
     """
     ref = cv2.cvtColor(ref_bgr, cv2.COLOR_BGR2GRAY)
     src = cv2.cvtColor(src_bgr, cv2.COLOR_BGR2GRAY)
@@ -101,7 +101,7 @@ def run_loftr_style(ref_bgr: np.ndarray, src_bgr: np.ndarray) -> dict[str, Any]:
         "mean_confidence": round(matched_mean_confidence, 4),
         "matched_mean_confidence": round(matched_mean_confidence, 4),
         "weak_regions": weak_regions,
-        "matcher": "AKAZE+ratio (LoFTR-style adapter — swap for KF.LoFTR when GPU weights available)",
+        "matcher": "AKAZE + Lowe ratio (LoFTR-ready adapter interface)",
     }
 
 

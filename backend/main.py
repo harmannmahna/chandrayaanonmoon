@@ -1,4 +1,4 @@
-"""LunaMatch API — CLAHE → LoFTR-style matching → RANSAC → ice detection."""
+"""LunaMatch API — CLAHE → correspondence matching → RANSAC → ice planning support."""
 
 from __future__ import annotations
 

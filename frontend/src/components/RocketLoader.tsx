@@ -5,7 +5,7 @@ import { GlassCard } from "./GlassCard";
 
 const DEFAULT_TIPS = [
   "Bonus tip: CLAHE boosts local contrast tile-by-tile — crater rims appear without blowing out bright mare.",
-  "Bonus tip: LoFTR-style matchers use dense attention cues, so they survive illumination swings that break SIFT/ORB.",
+  "Bonus tip: Correspondence uses an AKAZE + ratio adapter today — the interface stays LoFTR-ready for GPU weights later.",
   "Bonus tip: RANSAC keeps the transform that the most matches agree with — outliers get discarded automatically.",
 ];
 

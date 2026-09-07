@@ -54,7 +54,7 @@ export function ProjectRelevance() {
               ["Sun effect", "Changes image brightness and shadow geometry", "Changes solar access, cold-trap context, and route risk"],
               ["Main challenge", "Weak/false visual correspondences", "Balance science access, terrain safety, and energy"],
               ["Prototype response", "Matching + RANSAC + quality warning", "Suitability score + solar-aware route"],
-              ["Key output", "Registered image and match points", "Ice evidence, landing candidate, and rover path"],
+              ["Key output", "Registered image and match points", "Candidate signatures, landing score, rover path (demo layers)"],
             ].map(([topic, reg, ice]) => (
               <tr key={topic} className="border-b border-[var(--border)]">
                 <td className="px-3 py-3 font-medium text-[var(--text)]">{topic}</td>

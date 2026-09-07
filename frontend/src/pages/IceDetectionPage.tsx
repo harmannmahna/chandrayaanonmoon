@@ -368,11 +368,11 @@ export function IceDetectionPage() {
       <GlassCard className="space-y-3">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="kicker">LUNA/ICE · Lunar Resource & Traverse Planner</p>
-            <h1 className="mt-2 text-3xl font-semibold">Map the ice. Plan the path.</h1>
+            <p className="kicker">LUNA/ICE · Prototype polar mission planner</p>
+            <h1 className="mt-2 text-3xl font-semibold">Screen candidates. Plan the path.</h1>
             <p className="mt-2 max-w-3xl text-sm leading-7 text-[var(--muted)]">
-              Transform radar evidence into transparent landing and rover-planning scenarios. Radar-consistent ice
-              screening, landing suitability, and rover traverse planning.
+              Bring optical context in, then explore an illustrative crater planner for radar-threshold screening, landing
+              suitability, rover routes, and scenario-based volume — planning support for demos, not mission certification.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -395,7 +395,7 @@ export function IceDetectionPage() {
           <span>→</span>
           <span className={stage === "enhance" ? "text-[var(--accent)]" : ""}>2 · Enhance</span>
           <span>→</span>
-          <span className={stage === "mission" ? "text-[var(--accent)]" : ""}>3 · Ice mission</span>
+          <span className={stage === "mission" ? "text-[var(--accent)]" : ""}>3 · Mission planner</span>
         </div>
       </GlassCard>
 
@@ -404,12 +404,12 @@ export function IceDetectionPage() {
           <p className="kicker">Judge walkthrough</p>
           <ol className="list-decimal space-y-1 pl-5">
             <li>Stage 1: upload images or load demo optical pair.</li>
-            <li>Stage 2: review CLAHE enhance, then open Ice mission.</li>
-            <li>Load demo crater dataset layers — toggle CPR, DOP, doubly-shadowed mask.</li>
-            <li>Set CPR &gt; 1.0 and DOP &lt; 0.13 → Run ice analysis → select highest-priority cluster.</li>
+            <li>Stage 2: review CLAHE enhance, then open the mission planner.</li>
+            <li>Load the illustrative crater dataset — toggle CPR, DOP, doubly-shadowed mask.</li>
+            <li>Set CPR &gt; 1.0 and DOP &lt; 0.13 → Run analysis → select highest-priority cluster.</li>
             <li>Find landing sites → select LZ-01 → Plan solar-aware rover route.</li>
             <li>Adjust volume depth/fraction → Export mission package.</li>
-            <li>Remind: potential subsurface-ice signature only — not confirmed ice.</li>
+            <li>Frame results as potential signatures / planning scenarios — not confirmed ice.</li>
           </ol>
         </GlassCard>
       ) : null}
@@ -504,7 +504,7 @@ export function IceDetectionPage() {
               Load demo optical pair
             </button>
             <button type="button" className="btn btn-secondary" onClick={enterMission}>
-              Skip to demo crater mission
+              Skip to demo mission planner
             </button>
           </div>
         </GlassCard>
@@ -528,7 +528,7 @@ export function IceDetectionPage() {
           </div>
           <div className="flex flex-wrap gap-3">
             <button type="button" className="btn btn-primary" onClick={enterMission}>
-              Next · Ice mission dashboard
+              Next · Mission planner
             </button>
             <button type="button" className="btn btn-secondary" onClick={() => setStage("select")}>
               Back
@@ -543,9 +543,13 @@ export function IceDetectionPage() {
           {/* Left controls */}
           <div className="space-y-4">
             <GlassCard className="space-y-3">
-              <p className="kicker">Dataset</p>
+              <p className="kicker">Dataset · synthetic demo</p>
               <p className="text-xs text-[var(--muted)]">{dataset.name}</p>
               <p className="text-[11px] leading-5 text-[var(--muted)]">{dataset.sourceLabel}</p>
+              <p className="rounded-xl border border-dashed border-[var(--border)] px-3 py-2 text-[11px] leading-5 text-[var(--muted)]">
+                Stage 3 is a <strong className="text-[var(--text)]">browser mission-planning simulator</strong> on
+                illustrative CPR/DOP layers — not calibrated DFSAR ice detection.
+              </p>
               <button
                 type="button"
                 className="btn btn-secondary w-full !min-h-9 text-xs"
@@ -564,7 +568,7 @@ export function IceDetectionPage() {
                   setRoute(null);
                 }}
               >
-                Reload demo crater dataset
+                Reload synthetic crater dataset
               </button>
             </GlassCard>
 
@@ -638,7 +642,7 @@ export function IceDetectionPage() {
                 Apply terrain roughness penalty
               </label>
               <button type="button" className="btn btn-primary w-full" onClick={runAnalysis}>
-                Run ice analysis
+                Run candidate screening
               </button>
             </GlassCard>
 
@@ -777,7 +781,9 @@ export function IceDetectionPage() {
                   ))}
                 </>
               ) : (
-                <p className="text-xs text-[var(--muted)]">Run ice analysis to screen potential subsurface-ice signatures.</p>
+                <p className="text-xs text-[var(--muted)]">
+                  Run candidate screening to map potential subsurface-ice signatures on the illustrative layers.
+                </p>
               )}
               {clusters.length ? (
                 <div className="mt-2 space-y-2">
@@ -856,7 +862,7 @@ export function IceDetectionPage() {
             </GlassCard>
 
             <GlassCard className="space-y-3">
-              <p className="kicker">Scenario-based ice-volume estimate</p>
+              <p className="kicker">Scenario-based ice-volume estimate · not a measurement</p>
               <p className="text-[11px] leading-5 text-[var(--muted)]">
                 This is a scenario-based resource estimate using mapped candidate area and user-controlled assumptions. Radar
                 evidence does not directly measure ice depth or concentration.
