@@ -70,21 +70,71 @@ def _save(path: Path, img: np.ndarray) -> None:
 
 
 def _draw_matches(ref: np.ndarray, src: np.ndarray, match: dict[str, Any]) -> np.ndarray:
-    mk0 = np.asarray(match["mkpts0"], dtype=np.float32)
-    mk1 = np.asarray(match["mkpts1"], dtype=np.float32)
+    """Side-by-side preview: green lines = matched pairs, red dots = unmatched keypoints."""
+    mk0 = np.asarray(match.get("mkpts0") or [], dtype=np.float32)
+    mk1 = np.asarray(match.get("mkpts1") or [], dtype=np.float32)
     conf = np.asarray(match.get("mconf") or [1.0] * len(mk0), dtype=np.float32)
+    u0 = np.asarray(match.get("unmatched0") or [], dtype=np.float32)
+    u1 = np.asarray(match.get("unmatched1") or [], dtype=np.float32)
+
+    green = (40, 220, 80)   # BGR — matched
+    red = (40, 40, 255)     # BGR — unmatched
+
     h = max(ref.shape[0], src.shape[0])
     canvas = np.zeros((h, ref.shape[1] + src.shape[1], 3), dtype=np.uint8)
     canvas[: ref.shape[0], : ref.shape[1]] = ref
     canvas[: src.shape[0], ref.shape[1] :] = src
-    for i in range(min(len(mk0), 120)):
+
+    # Unmatched keypoints first (underneath)
+    for i in range(min(len(u0), 400)):
+        p = (int(u0[i][0]), int(u0[i][1]))
+        cv2.circle(canvas, p, 3, red, -1, cv2.LINE_AA)
+    for i in range(min(len(u1), 400)):
+        p = (int(u1[i][0] + ref.shape[1]), int(u1[i][1]))
+        cv2.circle(canvas, p, 3, red, -1, cv2.LINE_AA)
+
+    # Matched correspondences in green
+    for i in range(min(len(mk0), 160)):
         p0 = (int(mk0[i][0]), int(mk0[i][1]))
         p1 = (int(mk1[i][0] + ref.shape[1]), int(mk1[i][1]))
+        # Slight alpha via thickness: higher conf → slightly thicker
         c = float(conf[i]) if i < len(conf) else 0.5
-        color = (40, int(80 + 160 * c), int(200 * c)) if c >= 0.35 else (40, 120, 255)
-        cv2.line(canvas, p0, p1, color, 1, cv2.LINE_AA)
-        cv2.circle(canvas, p0, 2, color, -1)
-        cv2.circle(canvas, p1, 2, color, -1)
+        thickness = 2 if c >= 0.35 else 1
+        cv2.line(canvas, p0, p1, green, thickness, cv2.LINE_AA)
+        cv2.circle(canvas, p0, 3, green, -1, cv2.LINE_AA)
+        cv2.circle(canvas, p1, 3, green, -1, cv2.LINE_AA)
+
+    # Legend
+    cv2.rectangle(canvas, (8, 8), (210, 58), (0, 0, 0), -1)
+    cv2.circle(canvas, (24, 24), 5, green, -1)
+    cv2.putText(canvas, "Matched", (36, 28), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (230, 230, 230), 1, cv2.LINE_AA)
+    cv2.circle(canvas, (24, 44), 5, red, -1)
+    cv2.putText(canvas, "Unmatched", (36, 48), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (230, 230, 230), 1, cv2.LINE_AA)
+    return canvas
+
+
+def _draw_unmatched_on_moon(ref: np.ndarray, match: dict[str, Any]) -> np.ndarray:
+    """Separate panel: unmatched keypoints overlaid on the reference moon image only."""
+    canvas = ref.copy()
+    if canvas.ndim == 2:
+        canvas = cv2.cvtColor(canvas, cv2.COLOR_GRAY2BGR)
+    u0 = np.asarray(match.get("unmatched0") or [], dtype=np.float32)
+    red = (40, 40, 255)
+    for i in range(min(len(u0), 600)):
+        p = (int(u0[i][0]), int(u0[i][1]))
+        cv2.circle(canvas, p, 4, red, -1, cv2.LINE_AA)
+        cv2.circle(canvas, p, 6, (20, 20, 180), 1, cv2.LINE_AA)
+    cv2.rectangle(canvas, (8, 8), (260, 40), (0, 0, 0), -1)
+    cv2.putText(
+        canvas,
+        f"Unmatched on moon: {len(u0)}",
+        (16, 30),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.55,
+        (230, 230, 230),
+        1,
+        cv2.LINE_AA,
+    )
     return canvas
 
 
@@ -252,11 +302,14 @@ async def process_loftr(job_id: str = Form(...), source_index: int = Form(1)) ->
         raise HTTPException(400, "Could not read CLAHE images")
     match = run_loftr_style(ref, src)
     preview = _draw_matches(ref, src, match)
+    unmatched_preview = _draw_unmatched_on_moon(ref, match)
     out_dir = RESULT_DIR / job_id / "loftr"
     _save(out_dir / "matches.png", preview)
+    _save(out_dir / "unmatched.png", unmatched_preview)
     payload = {
         **match,
         "preview_url": f"/results/{job_id}/loftr/matches.png",
+        "unmatched_preview_url": f"/results/{job_id}/loftr/unmatched.png",
         "reference_index": ref_i,
         "source_index": source_index,
     }
