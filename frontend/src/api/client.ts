@@ -69,9 +69,13 @@ export type LoftrResponse = {
   mconf: number[];
   unmatched0?: number[][];
   unmatched1?: number[][];
+  /** Keypoints detected on both views before match/unmatch split. */
+  total_keypoints_evaluated?: number;
   num_matches: number;
   num_unmatched?: number;
+  /** Average confidence of matched (green) keypoints only — never includes red/unmatched. */
   mean_confidence: number;
+  matched_mean_confidence?: number;
   weak_regions: WeakRegion[];
   preview_url: string;
   unmatched_preview_url?: string;

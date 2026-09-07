@@ -27,6 +27,7 @@ def run_loftr_style(ref_bgr: np.ndarray, src_bgr: np.ndarray) -> dict[str, Any]:
 
     mkpts0: list[list[float]] = []
     mkpts1: list[list[float]] = []
+    # Confidence scores for MATCHED (green) pairs only — never pad with unmatched/red.
     mconf: list[float] = []
     unmatched0: list[list[float]] = []
     unmatched1: list[list[float]] = []
@@ -34,12 +35,17 @@ def run_loftr_style(ref_bgr: np.ndarray, src_bgr: np.ndarray) -> dict[str, Any]:
     matched_q: set[int] = set()
     matched_t: set[int] = set()
 
+    k0 = k0 or []
+    k1 = k1 or []
+    # Pool of detections considered by the matcher (both views).
+    total_keypoints_evaluated = int(len(k0) + len(k1))
+
     if d0 is not None and d1 is not None and len(k0) and len(k1):
         matcher = cv2.BFMatcher(cv2.NORM_HAMMING)
         pairs = matcher.knnMatch(d0, d1, k=2)
         for pair in pairs:
             if len(pair) < 2:
-                # No second neighbor → treat query as unmatched
+                # No second neighbor → treat query as unmatched (no confidence score)
                 if pair:
                     qi = pair[0].queryIdx
                     if qi not in matched_q:
@@ -50,7 +56,7 @@ def run_loftr_style(ref_bgr: np.ndarray, src_bgr: np.ndarray) -> dict[str, Any]:
             if a.distance < 0.78 * b.distance:
                 p0 = k0[a.queryIdx].pt
                 p1 = k1[a.trainIdx].pt
-                # Confidence from ratio + response
+                # Confidence from ratio + response — MATCHED only
                 ratio = 1.0 - (a.distance / max(b.distance, 1e-6))
                 resp = float(min(1.0, (k0[a.queryIdx].response + k1[a.trainIdx].response) / 2.0))
                 conf = float(np.clip(0.45 * ratio + 0.55 * min(1.0, resp * 4), 0.05, 0.99))
@@ -60,7 +66,7 @@ def run_loftr_style(ref_bgr: np.ndarray, src_bgr: np.ndarray) -> dict[str, Any]:
                 matched_q.add(a.queryIdx)
                 matched_t.add(a.trainIdx)
             else:
-                # Failed ratio test → unmatched on reference
+                # Failed ratio test → unmatched on reference (excluded from mean confidence)
                 p0 = k0[a.queryIdx].pt
                 unmatched0.append([float(p0[0]), float(p0[1])])
 
@@ -76,8 +82,9 @@ def run_loftr_style(ref_bgr: np.ndarray, src_bgr: np.ndarray) -> dict[str, Any]:
     unmatched0 = _dedupe_pts(unmatched0)
     unmatched1 = _dedupe_pts(unmatched1)
 
-    conf_arr = np.asarray(mconf, dtype=np.float32) if mconf else np.zeros((0,), dtype=np.float32)
-    mean_conf = float(conf_arr.mean()) if len(conf_arr) else 0.0
+    # Mean confidence = average over GREEN matched pairs ONLY.
+    # Do NOT average zeros / placeholders for unmatched (red) keypoints.
+    matched_mean_confidence = float(np.mean(mconf)) if mconf else 0.0
 
     weak_regions = _weak_regions(ref.shape[1], ref.shape[0], mkpts0, mconf)
 
@@ -87,9 +94,12 @@ def run_loftr_style(ref_bgr: np.ndarray, src_bgr: np.ndarray) -> dict[str, Any]:
         "mconf": mconf,
         "unmatched0": unmatched0,
         "unmatched1": unmatched1,
+        "total_keypoints_evaluated": total_keypoints_evaluated,
         "num_matches": len(mkpts0),
         "num_unmatched": len(unmatched0) + len(unmatched1),
-        "mean_confidence": round(mean_conf, 4),
+        # Canonical + explicit alias — both are matched-only averages.
+        "mean_confidence": round(matched_mean_confidence, 4),
+        "matched_mean_confidence": round(matched_mean_confidence, 4),
         "weak_regions": weak_regions,
         "matcher": "AKAZE+ratio (LoFTR-style adapter — swap for KF.LoFTR when GPU weights available)",
     }
@@ -113,7 +123,11 @@ def _weak_regions(
     mconf: list[float],
     grid: int = 3,
 ) -> list[dict[str, Any]]:
-    """Flag image tiles with sparse/weak matches and explain why."""
+    """Flag image tiles with sparse/weak MATCHED keypoints and explain why.
+
+    Tile mean_confidence averages only matched (green) confidences in that cell —
+    unmatched/red points are not part of the average.
+    """
     cells = [[[] for _ in range(grid)] for _ in range(grid)]
     for (x, y), c in zip(mkpts0, mconf):
         gx = min(grid - 1, max(0, int(x / width * grid)))
@@ -137,6 +151,7 @@ def _weak_regions(
     for gy in range(grid):
         for gx in range(grid):
             vals = cells[gy][gx]
+            # vals are matched-only confidences for this tile
             mean_c = float(np.mean(vals)) if vals else 0.0
             if len(vals) < 4 or mean_c < 0.38:
                 x0, y0 = int(gx * cw), int(gy * ch)

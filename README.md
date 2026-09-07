@@ -16,6 +16,7 @@ on Chandrayaan-2 optical imagery.
 1. Cinematic landing page with orbitable 3D Moon
 2. Image Registration wizard: CLAHE → matching → RANSAC → plain-language conclusion
 3. Ice Detection module (CPR > 1 & DOP < 0.13) framed as a registration-enabled ISRO need
+   — full walkthrough: [`docs/ICE_DETECTION.md`](docs/ICE_DETECTION.md)
 4. Solar System explorer (Sun, Moon, 8 planets)
 5. Mission Briefing narrative
 6. Dark/light mode + ambient soundtrack toggle

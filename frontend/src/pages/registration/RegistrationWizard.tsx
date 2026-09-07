@@ -339,9 +339,22 @@ export function RegistrationWizard() {
               <span className="mr-3 inline-flex items-center gap-1.5"><span className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-400" /> Green = matched</span>
               <span className="inline-flex items-center gap-1.5"><span className="inline-block h-2.5 w-2.5 rounded-full bg-red-500" /> Red = unmatched</span>
             </p>
-            <div className="grid gap-3 sm:grid-cols-3">
-              <Metric label="Matches" value={String(loftr.num_matches)} />
-              <Metric label="Mean confidence" value={`${(loftr.mean_confidence * 100).toFixed(1)}%`} />
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <Metric
+                label="Total keypoints"
+                value={String(loftr.total_keypoints_evaluated ?? (loftr.num_matches + (loftr.num_unmatched ?? 0)))}
+                tip="All keypoints detected on both images before the match/unmatch split."
+              />
+              <Metric
+                label="Matched (green)"
+                value={String(loftr.num_matches)}
+                tip="Keypoints that passed the Lowe ratio test — shown in green."
+              />
+              <Metric
+                label="Matched confidence"
+                value={`${((loftr.matched_mean_confidence ?? loftr.mean_confidence) * 100).toFixed(1)}%`}
+                tip="Mean confidence of matched (green) keypoints only — unmatched/red points are excluded from this average."
+              />
               <Metric label="Matcher" value="LoFTR-style" tip={loftr.matcher} />
             </div>
             <div className="rounded-2xl border border-[var(--border)] p-4">
@@ -349,7 +362,7 @@ export function RegistrationWizard() {
               <div className="mt-3 space-y-3">
                 {loftr.weak_regions.length ? loftr.weak_regions.map((r) => (
                   <div key={r.pixel_range} className="text-sm leading-6 text-[var(--muted)]">
-                    <strong className="text-[var(--text)]">{r.pixel_range}</strong> · {r.match_count} matches · {(r.mean_confidence * 100).toFixed(0)}% · {r.reason}
+                    <strong className="text-[var(--text)]">{r.pixel_range}</strong> · {r.match_count} matched · {(r.mean_confidence * 100).toFixed(0)}% matched conf · {r.reason}
                   </div>
                 )) : <p className="text-sm text-[var(--muted)]">No weak tiles flagged.</p>}
               </div>
